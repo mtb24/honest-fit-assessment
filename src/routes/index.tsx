@@ -14,9 +14,9 @@ import type { KnownProvider, LlmRuntimeSettings } from '@/lib/llm/types'
 import { useProfileContext } from '@/contexts/ProfileContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
 import { ProfileHeaderSection } from '@/components/profile/ProfileHeaderSection'
 import { ProfileActions } from '@/components/profile/ProfileActions'
-import { ExperienceSection } from '@/components/profile/ExperienceSection'
 import { JobDescriptionFitSection } from '@/components/profile/JobDescriptionFitSection'
 import { CandidateChatSection } from '@/components/profile/CandidateChatSection'
 
@@ -202,6 +202,7 @@ function HomePage() {
         : null
 
   const firstName = activeProfile.name.split(' ')[0] || activeProfile.name
+  const topHighlights = getTopProfileHighlights(activeProfile)
 
   const handleAssess = () => {
     assessMutation.mutate(jobDescription)
@@ -409,7 +410,22 @@ function HomePage() {
           <ProfileActions onProfileImported={handleProfileImported} />
         </div>
 
-        <ExperienceSection experience={activeProfile.experience} />
+        <Card className="mb-6 ring-1 ring-slate-200">
+          <h2 className="text-lg font-semibold text-slate-900">Candidate Snapshot</h2>
+          <p className="mt-1 text-sm text-slate-600">{activeProfile.location}</p>
+          <p className="mt-2 text-sm text-slate-700">{activeProfile.summary}</p>
+
+          {topHighlights.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-sm font-semibold text-slate-800">Top 3 highlights</h3>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                {topHighlights.map((highlight) => (
+                  <li key={highlight}>{highlight}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Card>
 
         <JobDescriptionFitSection
           jobDescription={jobDescription}
@@ -479,4 +495,16 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(selector)).filter(
     (el) => !el.hasAttribute('disabled') && el.tabIndex !== -1,
   )
+}
+
+function getTopProfileHighlights(profile: CandidateProfile): string[] {
+  const candidateHighlights = [
+    ...profile.experience.flatMap((entry) => entry.highlights),
+    ...profile.stories.flatMap((story) => story.takeaways),
+    ...profile.coreStrengths,
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean)
+
+  return Array.from(new Set(candidateHighlights)).slice(0, 3)
 }

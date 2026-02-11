@@ -5,7 +5,7 @@ import type {
   ChatResponse,
   RequirementMatch,
 } from '@/data/types'
-import { callYourLlm } from '@/lib/llmClient'
+import { callLlmText } from '@/lib/llm/client'
 import type { LlmRuntimeSettings } from '@/lib/llm/types'
 
 export async function chatAboutCandidateOnServer(
@@ -41,7 +41,7 @@ Role context:
 ${roleContext}
 `
 
-  const llmResponseText = await callYourLlm({
+  const llmResponseText = await callLlmText({
     system: systemPrompt,
     user: lastUserMessage.content,
     settings: llmSettings,

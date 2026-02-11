@@ -4,6 +4,7 @@ import { ResumeToProfileSection } from '@/components/profile/ResumeToProfileSect
 import { ExperienceSection } from '@/components/profile/ExperienceSection'
 import { ProfileHeaderSection } from '@/components/profile/ProfileHeaderSection'
 import { ProfileStoriesSection } from '@/components/profile/ProfileStoriesSection'
+import { ProfileOnboarding } from '@/components/profile/ProfileOnboarding'
 import { Card } from '@/components/ui/card'
 import { useProfileContext } from '@/contexts/ProfileContext'
 
@@ -14,9 +15,18 @@ export const Route = createFileRoute('/candidate-profile')({
 function CandidateProfilePage() {
   const {
     activeProfile,
+    hasProfile,
     setActiveProfile,
     setProfileImportError,
   } = useProfileContext()
+
+  if (!hasProfile || !activeProfile) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <ProfileOnboarding />
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">

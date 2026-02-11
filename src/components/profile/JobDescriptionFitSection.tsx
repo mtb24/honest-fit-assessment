@@ -1,4 +1,5 @@
 import type { FitResult } from '@/data/types'
+import { FitSummary } from '@/components/fit/FitSummary'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -66,6 +67,8 @@ export function JobDescriptionFitSection({
             <span className="font-semibold">Weak</span> = missing several fundamental
             requirements or in a very different discipline.
           </p>
+
+          <FitSummary fit={fitResult} />
 
           <dl className="text-slate-800">
             <dt className="mt-3 text-sm font-semibold text-slate-700">Summary</dt>

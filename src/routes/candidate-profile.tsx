@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ProfileActions } from '@/components/profile/ProfileActions'
+import { ResumeToProfileSection } from '@/components/profile/ResumeToProfileSection'
 import { ExperienceSection } from '@/components/profile/ExperienceSection'
 import { ProfileHeaderSection } from '@/components/profile/ProfileHeaderSection'
 import { ProfileStoriesSection } from '@/components/profile/ProfileStoriesSection'
@@ -11,7 +12,11 @@ export const Route = createFileRoute('/candidate-profile')({
 })
 
 function CandidateProfilePage() {
-  const { activeProfile } = useProfileContext()
+  const {
+    activeProfile,
+    setActiveProfile,
+    setProfileImportError,
+  } = useProfileContext()
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -38,6 +43,11 @@ function CandidateProfilePage() {
           ))}
         </div>
       </Card>
+
+      <ResumeToProfileSection
+        onProfileImported={setActiveProfile}
+        onImportError={setProfileImportError}
+      />
 
       <ExperienceSection experience={activeProfile.experience} />
       <ProfileStoriesSection stories={activeProfile.stories} />

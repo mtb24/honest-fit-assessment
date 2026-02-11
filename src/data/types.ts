@@ -1,3 +1,10 @@
+import type { z } from 'zod'
+import type {
+  candidateExperienceSchema,
+  candidateProfileSchema,
+  candidateStorySchema,
+} from '@/data/candidateProfile.schema'
+
 export type FitLevel = 'strong' | 'moderate' | 'weak'
 
 export type FitResult = {
@@ -14,67 +21,11 @@ export type FitResult = {
   }
 }
 
-export type CandidateExperience = {
-  company: string
-  role: string
-  location: string
-  start: string
-  end: string
-  domain: string
-  stack: string[]
-  highlights: string[]
-  links?: {
-    label: string;
-    url: string;
-  }[];
-}
+export type CandidateExperience = z.infer<typeof candidateExperienceSchema>
 
-export type CandidateStory = {
-  id: string
-  title: string
-  summary: string
-  takeaways: string[]
-}
+export type CandidateStory = z.infer<typeof candidateStorySchema>
 
-export type CandidateProfile = {
-  name: string
-  headline: string
-  subHeadline: string
-  location: string
-  summary: string
-  preferences: {
-    roleTitlesPreferred: string[]
-    roleTitlesAvoid: string[]
-    workMode: {
-      remoteOnly: boolean
-      remoteRegions: string[]
-      willingToTravelOccasionally: boolean
-      hybridRequired: boolean
-    }
-    compensation: {
-      minBaseSalaryUsd?: number
-      minContractRateUsdPerHour?: number
-    }
-    domainsPreferred: string[]
-    domainsAvoid: string[]
-  }
-  coreStrengths: string[]
-  skills: {
-    frontend?: string[]
-    backendAndApis?: string[]
-    designSystems?: string[]
-    infrastructureAndOps?: string[]
-    aiTools?: string[]
-    languagesMisc?: string[]
-    [category: string]: string[] | undefined
-  }
-  experience: CandidateExperience[]
-  stories: CandidateStory[]
-  meta?: {
-    profileVersion?: string
-    lastUpdated?: string
-  }
-}
+export type CandidateProfile = z.infer<typeof candidateProfileSchema>
 
 export type RequirementMatch = {
   id: string

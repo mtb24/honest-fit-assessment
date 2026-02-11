@@ -24,13 +24,14 @@ export function parseExportedProfileJson(json: string): CandidateProfile {
     throw new Error('Invalid JSON file. Could not parse.')
   }
 
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !('schemaVersion' in parsed) ||
-    (parsed as { schemaVersion?: unknown }).schemaVersion !==
-      CANDIDATE_PROFILE_SCHEMA_VERSION
-  ) {
+  const schemaVersion =
+    typeof parsed === 'object' && parsed !== null && 'schemaVersion' in parsed
+      ? (parsed as { schemaVersion?: unknown }).schemaVersion
+      : undefined
+
+  if (schemaVersion === CANDIDATE_PROFILE_SCHEMA_VERSION) {
+    // Current schema path.
+  } else {
     throw new Error(
       `Unsupported profile file. Expected schemaVersion "${CANDIDATE_PROFILE_SCHEMA_VERSION}".`,
     )

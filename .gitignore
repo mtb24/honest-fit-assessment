@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.local
+*.log
+.DS_Store
+.cursor/
+AGENTS.md
+src/data/candidateProfile.local.ts
+

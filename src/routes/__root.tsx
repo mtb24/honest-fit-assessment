@@ -11,7 +11,8 @@ import {
 import { QueryClientProvider } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { ProfileProvider } from '@/contexts/ProfileContext'
+import { ProfileProvider, useProfileContext } from '@/contexts/ProfileContext'
+import { Button } from '@/components/ui/button'
 import appCss from '~/styles/app.css?url'
 
 export const Route = createRootRouteWithContext<{
@@ -31,19 +32,37 @@ export const Route = createRootRouteWithContext<{
 function RootComponent() {
   const { queryClient } = useRouteContext({ from: '__root__' })
   return (
-    <RootDocument>
-      <QueryClientProvider client={queryClient}>
-        <ProfileProvider>
+    <QueryClientProvider client={queryClient}>
+      <ProfileProvider>
+        <RootDocument>
           <Outlet />
-        </ProfileProvider>
-      </QueryClientProvider>
-    </RootDocument>
+        </RootDocument>
+      </ProfileProvider>
+    </QueryClientProvider>
+  )
+}
+
+function ActiveProfileMeta() {
+  const { activeProfile, hasProfile, clearProfile } = useProfileContext()
+  if (!hasProfile || !activeProfile) return null
+
+  return (
+    <div className="flex items-center gap-2">
+      <p className="text-xs text-slate-600">
+        Active profile: <span className="font-medium">{activeProfile.name}</span> -{' '}
+        {activeProfile.headline}
+      </p>
+      <Button type="button" size="sm" variant="outline" onClick={clearProfile}>
+        Clear profile
+      </Button>
+    </div>
   )
 }
 
 function RootDocument({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isFitRoute = pathname === '/'
+  const isProfileRoute = pathname === '/candidate-profile'
   const toggleSettingsSidebar = () => {
     if (typeof window === 'undefined') return
     window.dispatchEvent(new CustomEvent('toggle-settings-sidebar'))
@@ -66,32 +85,28 @@ function RootDocument({ children }: { children: ReactNode }) {
                   <Link
                     to="/"
                     activeOptions={{ exact: true }}
-                    className={({ isActive }) =>
-                      `rounded-md px-2.5 py-1.5 text-sm transition ${
-                        isActive
-                          ? 'bg-slate-900 text-white'
-                          : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                      }`
-                    }
+                    className={`rounded-md px-2.5 py-1.5 text-sm transition ${
+                      isFitRoute
+                        ? 'bg-slate-900 text-white'
+                        : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                    }`}
                   >
                     Fit
                   </Link>
                   <Link
                     to="/candidate-profile"
-                    className={({ isActive }) =>
-                      `rounded-md px-2.5 py-1.5 text-sm transition ${
-                        isActive
-                          ? 'bg-slate-900 text-white'
-                          : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                      }`
-                    }
+                    className={`rounded-md px-2.5 py-1.5 text-sm transition ${
+                      isProfileRoute
+                        ? 'bg-slate-900 text-white'
+                        : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                    }`}
                   >
                     Profile
                   </Link>
                 </nav>
               </div>
               <div className="flex items-center gap-3">
-                <p className="text-xs text-muted">Candidate fit evaluation workspace</p>
+                <ActiveProfileMeta />
                 {isFitRoute && (
                   <button
                     type="button"

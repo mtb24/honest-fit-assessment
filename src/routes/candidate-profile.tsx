@@ -61,6 +61,15 @@ function CandidateProfilePage() {
 
       <ExperienceSection experience={activeProfile.experience} />
       <ProfileStoriesSection stories={activeProfile.stories} />
+
+      <details className="mt-4">
+        <summary className="cursor-pointer text-xs text-slate-400">
+          View raw profile JSON (debug)
+        </summary>
+        <pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-950 p-2 text-[11px] text-slate-200">
+          {JSON.stringify(activeProfile, null, 2)}
+        </pre>
+      </details>
     </div>
   )
 }

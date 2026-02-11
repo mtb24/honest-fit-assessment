@@ -66,8 +66,33 @@ Return ONLY one JSON object that matches this shape:
 
 Rules:
 - Use only information present or strongly implied in the resume.
+- Be truthful. Do not invent companies, roles, projects, tools, impact, years, or achievements.
 - If a field is unknown, use safe defaults: empty arrays, false booleans, and neutral strings.
-- Keep story entries concise and grounded in notable resume accomplishments.
+- Always provide a complete object that follows the full shape above, including stories.
+- Build 2-4 stories that reflect real resume evidence and cover:
+  1) end-to-end ownership of complex systems or products,
+  2) design system or component library work (if present),
+  3) B2B SaaS or internal tool outcomes (if present),
+  4) one "sole owner" or "force multiplier" example where supported.
+- Keep stories concise and grounded in notable accomplishments.
+
+Mapping guidance:
+- If the resume shows multi-year React/TypeScript SPA delivery, map that into:
+  - coreStrengths such as "React + TypeScript single-page apps",
+  - skills.frontend including React, TypeScript, and SPA architecture,
+  - experience highlights that mention concrete frontend ownership.
+- If design systems or component libraries are mentioned, emphasize:
+  - coreStrengths entries related to design systems/component libraries,
+  - a skills.designSystems bucket,
+  - experience highlights tied to real design system outcomes.
+- If AI tools (Cursor, Copilot, ChatGPT, etc.) are mentioned:
+  - add AI-related strengths where justified,
+  - add skills.aiTools entries,
+  - include at least one experience highlight describing real usage.
+- For older infrastructure/IT roles (data center, networking, telephony, etc.):
+  - compress details into concise entries focused on systems ownership and business impact,
+  - avoid listing every low-level technology unless it is clearly relevant.
+- Prefer concise, high-signal wording over exhaustive bullet dumps.
 - Do not include markdown, explanation text, or code fences.
 `.trim()
 

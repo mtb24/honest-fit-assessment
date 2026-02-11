@@ -34,23 +34,21 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
               ))}
             </ul>
 
-            {exp.links && exp.links.length > 0 && (
-              <ul className="mt-2 space-y-1 text-xs text-slate-500">
+            {exp.links?.length ? (
+              <div className="mt-1 flex flex-wrap gap-1">
                 {exp.links.map((link) => (
-                  <li key={`${link.url}-${link.label}`}>
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${link.label} (opens in new tab)`}
-                      className="underline underline-offset-2 hover:text-slate-800"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded bg-slate-800 px-2 py-[2px] text-[10px] text-slate-100 hover:bg-slate-700"
+                  >
+                    {link.label}
+                  </a>
                 ))}
-              </ul>
-            )}
+              </div>
+            ) : null}
           </article>
         ))}
       </div>
@@ -58,11 +56,12 @@ export function ExperienceSection({ experience }: ExperienceSectionProps) {
   )
 }
 
-function formatExperienceDateRange(start: string, end: string): string {
+function formatExperienceDateRange(start: string, end?: string | null): string {
   return `${formatMonthYear(start)} - ${formatMonthYear(end)}`
 }
 
-function formatMonthYear(value: string): string {
+function formatMonthYear(value?: string | null): string {
+  if (!value) return 'Present'
   if (value.toLowerCase() === 'present') return 'Present'
   const [year, month] = value.split('-')
   const monthIndex = Number(month) - 1

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { FitResult } from '@/data/types'
 import { FitSummary } from '@/components/fit/FitSummary'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,11 @@ type JobDescriptionFitSectionProps = {
   assessError: string | null
   fitResult: FitResult | null
   showFitDebug: boolean
+  onGenerateApplicationAnswer: () => void
+  generateApplicationPending: boolean
+  generateApplicationError: string | null
+  applicationParagraph: string
+  onCopyApplicationAnswer: () => Promise<void>
 }
 
 export function JobDescriptionFitSection({
@@ -22,7 +28,20 @@ export function JobDescriptionFitSection({
   assessError,
   fitResult,
   showFitDebug,
+  onGenerateApplicationAnswer,
+  generateApplicationPending,
+  generateApplicationError,
+  applicationParagraph,
+  onCopyApplicationAnswer,
 }: JobDescriptionFitSectionProps) {
+  const [copiedApplicationAnswer, setCopiedApplicationAnswer] = useState(false)
+
+  const handleCopyApplicationAnswer = async () => {
+    await onCopyApplicationAnswer()
+    setCopiedApplicationAnswer(true)
+    window.setTimeout(() => setCopiedApplicationAnswer(false), 1500)
+  }
+
   return (
     <Card className="mb-6 ring-1 ring-slate-200">
       <h2 className="mb-4 text-lg font-semibold text-slate-900">Job Description Fit</h2>
@@ -69,6 +88,45 @@ export function JobDescriptionFitSection({
           </p>
 
           <FitSummary fit={fitResult} />
+
+          <div className="rounded border border-slate-200 bg-slate-50 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-slate-800">
+                Application helper
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onGenerateApplicationAnswer}
+                disabled={generateApplicationPending}
+              >
+                {generateApplicationPending
+                  ? 'Generating...'
+                  : 'Generate application answer'}
+              </Button>
+            </div>
+            {generateApplicationError && (
+              <p className="mt-2 text-xs text-red-700">{generateApplicationError}</p>
+            )}
+            {applicationParagraph && (
+              <div className="mt-3 rounded border border-slate-300 bg-white p-3">
+                <p className="text-sm leading-relaxed text-slate-800">
+                  {applicationParagraph}
+                </p>
+                <div className="mt-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCopyApplicationAnswer}
+                  >
+                    {copiedApplicationAnswer ? 'Copied' : 'Copy'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <dl className="text-slate-800">
             <dt className="mt-3 text-sm font-semibold text-slate-700">Summary</dt>

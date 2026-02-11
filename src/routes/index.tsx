@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import type {
@@ -9,17 +9,17 @@ import type {
 } from '@/data/types'
 import { assessFitFn } from '@/server/assessFit'
 import { chatAboutCandidateFn } from '@/server/chatAboutCandidate'
+import { generateApplicationBlurbFn } from '../server/generateApplicationBlurb'
 import { getLlmModelsFn } from '@/server/llmModels'
 import type { KnownProvider, LlmRuntimeSettings } from '@/lib/llm/types'
 import { useProfileContext } from '@/contexts/ProfileContext'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { ProfileHeaderSection } from '@/components/profile/ProfileHeaderSection'
 import { ProfileActions } from '@/components/profile/ProfileActions'
 import { JobDescriptionFitSection } from '@/components/profile/JobDescriptionFitSection'
 import { CandidateChatSection } from '@/components/profile/CandidateChatSection'
-import { ProfileOnboarding } from '@/components/profile/ProfileOnboarding'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -57,6 +57,7 @@ function HomePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [applicationParagraph, setApplicationParagraph] = useState('')
   const sidebarRef = useRef<HTMLElement | null>(null)
   const [llmSettings, setLlmSettings] = useState<UiLlmSettings>(
     DEFAULT_UI_SETTINGS,
@@ -79,6 +80,14 @@ function HomePage() {
   const getLlmModels = getLlmModelsFn as unknown as (args: {
     data: { provider: KnownProvider }
   }) => Promise<string[]>
+  const generateApplicationBlurb = generateApplicationBlurbFn as unknown as (args: {
+    data: {
+      jobDescription: string
+      profile: CandidateProfile
+      fit: FitResult
+      llmSettings?: LlmRuntimeSettings
+    }
+  }) => Promise<{ paragraph: string }>
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -167,6 +176,7 @@ function HomePage() {
     onSuccess: (data, jd) => {
       setFitResult(data)
       setLastEvaluatedJobDescription(jd.trim())
+      setApplicationParagraph('')
     },
   })
 
@@ -194,6 +204,33 @@ function HomePage() {
     onSuccess: (data) => setMessages(data.messages),
   })
 
+  const applicationBlurbMutation = useMutation({
+    mutationFn: () => {
+      if (!activeProfile) {
+        throw new Error('Please create or import a profile first.')
+      }
+      if (!fitResult) {
+        throw new Error('Run an Honest Fit assessment before generating an application answer.')
+      }
+      const trimmedJobDescription = jobDescription.trim()
+      if (trimmedJobDescription.length < 40) {
+        throw new Error('Please include the job description used for this fit assessment.')
+      }
+
+      return generateApplicationBlurb({
+        data: {
+          jobDescription: trimmedJobDescription,
+          profile: activeProfile,
+          fit: fitResult,
+          llmSettings: runtimeSettings,
+        },
+      })
+    },
+    onSuccess: (data) => {
+      setApplicationParagraph(data.paragraph)
+    },
+  })
+
   const modelsQuery = useQuery({
     queryKey: ['llm-models', llmSettings.provider],
     queryFn: () =>
@@ -216,6 +253,7 @@ function HomePage() {
   const topHighlights = activeProfile ? getTopProfileHighlights(activeProfile) : []
 
   const handleAssess = () => {
+    if (!activeProfile) return
     assessMutation.mutate(jobDescription)
   }
 
@@ -226,6 +264,7 @@ function HomePage() {
   }
 
   const handleSendMessage = (text: string) => {
+    if (!activeProfile) return
     if (!text.trim()) return
     const newMessages: ChatMessage[] = [
       ...messages,
@@ -236,12 +275,39 @@ function HomePage() {
     chatMutation.mutate(newMessages)
   }
 
+  const handleGenerateApplicationAnswer = () => {
+    applicationBlurbMutation.mutate()
+  }
+
+  const handleCopyApplicationAnswer = async () => {
+    if (!applicationParagraph) return
+    await navigator.clipboard.writeText(applicationParagraph)
+  }
+
   useEffect(() => {
     if (!availableModels.length) return
     setLlmSettings((prev) =>
       availableModels.includes(prev.model) ? prev : { ...prev, model: availableModels[0] },
     )
   }, [availableModels])
+
+  if (!hasProfile || !activeProfile) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-12">
+        <Card className="ring-1 ring-slate-200">
+          <h1 className="text-xl font-semibold text-slate-900">Honest Fit Assessment</h1>
+          <p className="mt-2 text-sm text-slate-700">
+            To get an honest fit assessment, you first need a candidate profile.
+          </p>
+          <div className="mt-4">
+            <Link to="/candidate-profile" className={buttonVariants()}>
+              Set up my profile
+            </Link>
+          </div>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -412,71 +478,76 @@ function HomePage() {
       </aside>
 
       <div className="mx-auto max-w-3xl px-4 py-8">
-        {!hasProfile && <ProfileOnboarding />}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <ProfileHeaderSection
+            name={activeProfile.name}
+            headline={activeProfile.headline}
+            subHeadline={activeProfile.subHeadline}
+          />
+          <ProfileActions onProfileImported={handleProfileImported} />
+        </div>
 
-        {hasProfile && activeProfile && (
-          <>
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <ProfileHeaderSection
-                name={activeProfile.name}
-                headline={activeProfile.headline}
-                subHeadline={activeProfile.subHeadline}
-              />
-              <ProfileActions onProfileImported={handleProfileImported} />
+        <Card className="mb-6 ring-1 ring-slate-200">
+          <h2 className="text-lg font-semibold text-slate-900">Candidate Snapshot</h2>
+          <p className="mt-1 text-sm text-slate-600">{activeProfile.location}</p>
+          <p className="mt-2 text-sm text-slate-700">{activeProfile.summary}</p>
+
+          {topHighlights.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-sm font-semibold text-slate-800">Top 3 highlights</h3>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                {topHighlights.map((highlight) => (
+                  <li key={highlight}>{highlight}</li>
+                ))}
+              </ul>
             </div>
+          )}
+        </Card>
 
-            <Card className="mb-6 ring-1 ring-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Candidate Snapshot</h2>
-              <p className="mt-1 text-sm text-slate-600">{activeProfile.location}</p>
-              <p className="mt-2 text-sm text-slate-700">{activeProfile.summary}</p>
+        <JobDescriptionFitSection
+          jobDescription={jobDescription}
+          onJobDescriptionChange={setJobDescription}
+          onAssess={handleAssess}
+          assessPending={assessMutation.isPending}
+          assessError={
+            assessMutation.isError
+              ? assessMutation.error instanceof Error
+                ? assessMutation.error.message
+                : 'Something went wrong.'
+              : null
+          }
+          fitResult={fitResult}
+          showFitDebug={llmSettings.showFitDebug}
+          onGenerateApplicationAnswer={handleGenerateApplicationAnswer}
+          generateApplicationPending={applicationBlurbMutation.isPending}
+          generateApplicationError={
+            applicationBlurbMutation.isError
+              ? applicationBlurbMutation.error instanceof Error
+                ? applicationBlurbMutation.error.message
+                : 'Failed to generate application answer.'
+              : null
+          }
+          applicationParagraph={applicationParagraph}
+          onCopyApplicationAnswer={handleCopyApplicationAnswer}
+        />
 
-              {topHighlights.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-semibold text-slate-800">Top 3 highlights</h3>
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                    {topHighlights.map((highlight) => (
-                      <li key={highlight}>{highlight}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </Card>
-
-            <JobDescriptionFitSection
-              jobDescription={jobDescription}
-              onJobDescriptionChange={setJobDescription}
-              onAssess={handleAssess}
-              assessPending={assessMutation.isPending}
-              assessError={
-                assessMutation.isError
-                  ? assessMutation.error instanceof Error
-                    ? assessMutation.error.message
-                    : 'Something went wrong.'
-                  : null
-              }
-              fitResult={fitResult}
-              showFitDebug={llmSettings.showFitDebug}
-            />
-
-            <CandidateChatSection
-              firstName={firstName}
-              hasFreshRoleContext={hasFreshRoleContext}
-              suggestedQuestions={SUGGESTED_QUESTIONS}
-              messages={messages}
-              chatInput={chatInput}
-              onChatInputChange={setChatInput}
-              onSendMessage={handleSendMessage}
-              chatPending={chatMutation.isPending}
-              chatError={
-                chatMutation.isError
-                  ? chatMutation.error instanceof Error
-                    ? chatMutation.error.message
-                    : 'Something went wrong.'
-                  : null
-              }
-            />
-          </>
-        )}
+        <CandidateChatSection
+          firstName={firstName}
+          hasFreshRoleContext={hasFreshRoleContext}
+          suggestedQuestions={SUGGESTED_QUESTIONS}
+          messages={messages}
+          chatInput={chatInput}
+          onChatInputChange={setChatInput}
+          onSendMessage={handleSendMessage}
+          chatPending={chatMutation.isPending}
+          chatError={
+            chatMutation.isError
+              ? chatMutation.error instanceof Error
+                ? chatMutation.error.message
+                : 'Something went wrong.'
+              : null
+          }
+        />
       </div>
     </>
   )

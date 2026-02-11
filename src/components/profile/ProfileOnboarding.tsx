@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { parseResumeToProfileFn } from '@/server/parseResumeToProfile'
 
 const SETTINGS_STORAGE_KEY = 'honest-fit:llm-settings'
+const MIN_RESUME_LENGTH = 40
 
 const parseResumeToProfile = parseResumeToProfileFn as unknown as (args: {
   data: {
@@ -28,11 +29,18 @@ export function ProfileOnboarding() {
   const [resumeText, setResumeText] = useState('')
   const [isParsing, setIsParsing] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
+  const hasResumeText = resumeText.trim().length >= MIN_RESUME_LENGTH
 
   const handleUseExample = () => {
     setProfileImportError(null)
     setParseError(null)
     loadExampleProfile()
+  }
+
+  const handleProfileImported = (profile: CandidateProfile) => {
+    setProfileImportError(null)
+    setParseError(null)
+    setActiveProfile(profile)
   }
 
   const handleParseResume = async () => {
@@ -86,15 +94,24 @@ export function ProfileOnboarding() {
           onChange={(event) => setResumeText(event.target.value)}
           placeholder="Paste your resume here to build a profile..."
         />
-        <Button type="button" onClick={handleParseResume} disabled={isParsing}>
+        <Button
+          type="button"
+          onClick={handleParseResume}
+          disabled={isParsing || !hasResumeText}
+        >
           {isParsing ? 'Building profile...' : 'Build profile from resume'}
         </Button>
+        <p className="text-[11px] text-slate-500">
+          {hasResumeText
+            ? 'We will infer a structured profile from your resume text.'
+            : 'Paste your resume above to enable this button.'}
+        </p>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-600">
         <span>Or:</span>
         <ImportProfileButton
-          onProfileImported={setActiveProfile}
+          onProfileImported={handleProfileImported}
           onImportError={setProfileImportError}
         />
         <Button type="button" variant="outline" size="sm" onClick={handleUseExample}>

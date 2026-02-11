@@ -29,7 +29,18 @@ export function ProfileActions({ onProfileImported }: ProfileActionsProps) {
           onImportError={setProfileImportError}
         />
       </div>
-      {profileImportError && <p className="text-xs text-red-700">{profileImportError}</p>}
+      {profileImportError && (
+        <div className="mt-2 flex items-center gap-2">
+          <p className="text-xs text-red-600">{profileImportError}</p>
+          <button
+            type="button"
+            className="text-xs text-slate-600 underline underline-offset-2 hover:text-slate-800"
+            onClick={() => setProfileImportError(null)}
+          >
+            Clear
+          </button>
+        </div>
+      )}
     </div>
   )
 }

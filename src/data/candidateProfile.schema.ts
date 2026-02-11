@@ -1,23 +1,23 @@
 import { z } from 'zod'
 
-const profileLinkSchema = z.object({
+export const profileLinkSchema = z.object({
   label: z.string().min(1),
   url: z.string().min(1),
 })
 
-const candidateExperienceSchema = z.object({
+export const candidateExperienceSchema = z.object({
   company: z.string().min(1),
   role: z.string().min(1),
-  location: z.string(),
+  location: z.string().optional().default(''),
   start: z.string().min(1),
-  end: z.string().min(1),
-  domain: z.string(),
-  stack: z.array(z.string()),
-  highlights: z.array(z.string()),
+  end: z.string().optional().nullable(),
+  domain: z.string().optional().default(''),
+  stack: z.array(z.string()).default([]),
+  highlights: z.array(z.string()).default([]),
   links: z.array(profileLinkSchema).optional(),
 })
 
-const candidateStorySchema = z.object({
+export const candidateStorySchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   summary: z.string().min(1),

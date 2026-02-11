@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
-import { candidateProfile } from '@/data/currentProfile'
 import type {
   CandidateProfile,
   ChatMessage,
@@ -12,15 +11,14 @@ import { assessFitFn } from '@/server/assessFit'
 import { chatAboutCandidateFn } from '@/server/chatAboutCandidate'
 import { getLlmModelsFn } from '@/server/llmModels'
 import type { KnownProvider, LlmRuntimeSettings } from '@/lib/llm/types'
-import { exportProfileToJson, parseExportedProfileJson } from '@/lib/profileSerialization'
+import { useProfileContext } from '@/contexts/ProfileContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ProfileHeaderSection } from '@/components/profile/ProfileHeaderSection'
+import { ProfileActions } from '@/components/profile/ProfileActions'
 import { ExperienceSection } from '@/components/profile/ExperienceSection'
 import { JobDescriptionFitSection } from '@/components/profile/JobDescriptionFitSection'
 import { CandidateChatSection } from '@/components/profile/CandidateChatSection'
-import { ExportProfileButton } from '@/components/profile/ExportProfileButton'
-import { ImportProfileButton } from '@/components/profile/ImportProfileButton'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -33,7 +31,6 @@ const SUGGESTED_QUESTIONS = [
 ]
 
 const SETTINGS_STORAGE_KEY = 'honest-fit:llm-settings'
-const PROFILE_STORAGE_KEY = 'honest-fit:active-profile'
 
 type UiLlmSettings = {
   provider: KnownProvider
@@ -52,9 +49,7 @@ const DEFAULT_UI_SETTINGS: UiLlmSettings = {
 }
 
 function HomePage() {
-  const [activeProfile, setActiveProfile] = useState<CandidateProfile>(candidateProfile)
-  const [profileStorageReady, setProfileStorageReady] = useState(false)
-  const [profileImportError, setProfileImportError] = useState<string | null>(null)
+  const { activeProfile } = useProfileContext()
   const [jobDescription, setJobDescription] = useState('')
   const [lastEvaluatedJobDescription, setLastEvaluatedJobDescription] = useState('')
   const [fitResult, setFitResult] = useState<FitResult | null>(null)
@@ -101,29 +96,8 @@ function HomePage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const savedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY)
-    if (savedProfile) {
-      try {
-        const profile = parseExportedProfileJson(savedProfile)
-        setActiveProfile(profile)
-        setProfileImportError(null)
-      } catch {
-        window.localStorage.removeItem(PROFILE_STORAGE_KEY)
-      }
-    }
-    setProfileStorageReady(true)
-  }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
     window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(llmSettings))
   }, [llmSettings])
-
-  useEffect(() => {
-    if (!profileStorageReady) return
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(PROFILE_STORAGE_KEY, exportProfileToJson(activeProfile))
-  }, [activeProfile, profileStorageReady])
 
   useEffect(() => {
     if (!settingsOpen) return
@@ -233,8 +207,7 @@ function HomePage() {
     assessMutation.mutate(jobDescription)
   }
 
-  const handleProfileImported = (profile: CandidateProfile) => {
-    setActiveProfile(profile)
+  const handleProfileImported = (_profile: CandidateProfile) => {
     setFitResult(null)
     setMessages([])
     setLastEvaluatedJobDescription('')
@@ -433,18 +406,7 @@ function HomePage() {
             headline={activeProfile.headline}
             subHeadline={activeProfile.subHeadline}
           />
-          <div className="flex shrink-0 flex-col items-start gap-2">
-            <div className="flex flex-wrap gap-2">
-              <ExportProfileButton profile={activeProfile} />
-              <ImportProfileButton
-                onProfileImported={handleProfileImported}
-                onImportError={setProfileImportError}
-              />
-            </div>
-            {profileImportError && (
-              <p className="text-xs text-red-700">{profileImportError}</p>
-            )}
-          </div>
+          <ProfileActions onProfileImported={handleProfileImported} />
         </div>
 
         <ExperienceSection experience={activeProfile.experience} />

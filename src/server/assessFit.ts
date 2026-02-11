@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import type { CandidateProfile, FitResult } from '@/data/types'
-import { assessFitWithLLM } from '@/lib/llmClient'
+import { assessFitWithLLM } from '@/lib/fitAssessment'
 import type { LlmRuntimeSettings } from '@/lib/llm/types'
 
 export async function assessFitOnServer(

@@ -5,11 +5,11 @@ import type {
   ChatResponse,
   RequirementMatch,
 } from '@/data/types'
-import { candidateProfile } from '@/data/currentProfile'
 import { callYourLlm } from '@/lib/llmClient'
 import type { LlmRuntimeSettings } from '@/lib/llm/types'
 
 export async function chatAboutCandidateOnServer(
+  profile: CandidateProfile,
   userMessages: ChatMessage[],
   requirements?: RequirementMatch[],
   llmSettings?: LlmRuntimeSettings,
@@ -18,7 +18,6 @@ export async function chatAboutCandidateOnServer(
     throw new Error('No messages provided.')
   }
 
-  const profile: CandidateProfile = candidateProfile
   const lastUserMessage = userMessages[userMessages.length - 1]
   const roleContext =
     requirements && requirements.length > 0
@@ -61,6 +60,7 @@ ${roleContext}
 export const chatAboutCandidateFn = createServerFn({ method: 'POST' })
   .inputValidator(
     (data: {
+      profile: CandidateProfile
       userMessages: ChatMessage[]
       requirements?: RequirementMatch[]
       llmSettings?: LlmRuntimeSettings
@@ -69,6 +69,7 @@ export const chatAboutCandidateFn = createServerFn({ method: 'POST' })
   )
   .handler(async ({ data }) =>
     chatAboutCandidateOnServer(
+      data.profile,
       data.userMessages,
       data.requirements,
       data.llmSettings,

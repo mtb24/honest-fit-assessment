@@ -2,17 +2,25 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { candidateProfile } from '@/data/currentProfile'
-import type { ChatMessage, FitResult, RequirementMatch } from '@/data/types'
+import type {
+  CandidateProfile,
+  ChatMessage,
+  FitResult,
+  RequirementMatch,
+} from '@/data/types'
 import { assessFitFn } from '@/server/assessFit'
 import { chatAboutCandidateFn } from '@/server/chatAboutCandidate'
 import { getLlmModelsFn } from '@/server/llmModels'
 import type { KnownProvider, LlmRuntimeSettings } from '@/lib/llm/types'
+import { exportProfileToJson, parseExportedProfileJson } from '@/lib/profileSerialization'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ProfileHeaderSection } from '@/components/profile/ProfileHeaderSection'
 import { ExperienceSection } from '@/components/profile/ExperienceSection'
 import { JobDescriptionFitSection } from '@/components/profile/JobDescriptionFitSection'
 import { CandidateChatSection } from '@/components/profile/CandidateChatSection'
+import { ExportProfileButton } from '@/components/profile/ExportProfileButton'
+import { ImportProfileButton } from '@/components/profile/ImportProfileButton'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -25,6 +33,7 @@ const SUGGESTED_QUESTIONS = [
 ]
 
 const SETTINGS_STORAGE_KEY = 'honest-fit:llm-settings'
+const PROFILE_STORAGE_KEY = 'honest-fit:active-profile'
 
 type UiLlmSettings = {
   provider: KnownProvider
@@ -43,6 +52,9 @@ const DEFAULT_UI_SETTINGS: UiLlmSettings = {
 }
 
 function HomePage() {
+  const [activeProfile, setActiveProfile] = useState<CandidateProfile>(candidateProfile)
+  const [profileStorageReady, setProfileStorageReady] = useState(false)
+  const [profileImportError, setProfileImportError] = useState<string | null>(null)
   const [jobDescription, setJobDescription] = useState('')
   const [lastEvaluatedJobDescription, setLastEvaluatedJobDescription] = useState('')
   const [fitResult, setFitResult] = useState<FitResult | null>(null)
@@ -54,10 +66,15 @@ function HomePage() {
     DEFAULT_UI_SETTINGS,
   )
   const assessFit = assessFitFn as unknown as (args: {
-    data: { jobDescription: string; llmSettings?: LlmRuntimeSettings }
+    data: {
+      jobDescription: string
+      profile: CandidateProfile
+      llmSettings?: LlmRuntimeSettings
+    }
   }) => Promise<FitResult>
   const chatAboutCandidate = chatAboutCandidateFn as unknown as (args: {
     data: {
+      profile: CandidateProfile
       userMessages: ChatMessage[]
       requirements?: RequirementMatch[]
       llmSettings?: LlmRuntimeSettings
@@ -84,8 +101,29 @@ function HomePage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    const savedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY)
+    if (savedProfile) {
+      try {
+        const profile = parseExportedProfileJson(savedProfile)
+        setActiveProfile(profile)
+        setProfileImportError(null)
+      } catch {
+        window.localStorage.removeItem(PROFILE_STORAGE_KEY)
+      }
+    }
+    setProfileStorageReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
     window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(llmSettings))
   }, [llmSettings])
+
+  useEffect(() => {
+    if (!profileStorageReady) return
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(PROFILE_STORAGE_KEY, exportProfileToJson(activeProfile))
+  }, [activeProfile, profileStorageReady])
 
   useEffect(() => {
     if (!settingsOpen) return
@@ -141,7 +179,11 @@ function HomePage() {
   const assessMutation = useMutation({
     mutationFn: (jd: string) =>
       assessFit({
-        data: { jobDescription: jd, llmSettings: runtimeSettings },
+        data: {
+          jobDescription: jd,
+          profile: activeProfile,
+          llmSettings: runtimeSettings,
+        },
       }),
     onSuccess: (data, jd) => {
       setFitResult(data)
@@ -160,6 +202,7 @@ function HomePage() {
     mutationFn: (msgs: ChatMessage[]) =>
       chatAboutCandidate({
         data: {
+          profile: activeProfile,
           userMessages: msgs,
           requirements: hasFreshRoleContext ? fitResult?.requirements : undefined,
           llmSettings: runtimeSettings,
@@ -184,11 +227,17 @@ function HomePage() {
         ? 'Failed to load models.'
         : null
 
-  const firstName =
-    candidateProfile.name.split(' ')[0] || candidateProfile.name
+  const firstName = activeProfile.name.split(' ')[0] || activeProfile.name
 
   const handleAssess = () => {
     assessMutation.mutate(jobDescription)
+  }
+
+  const handleProfileImported = (profile: CandidateProfile) => {
+    setActiveProfile(profile)
+    setFitResult(null)
+    setMessages([])
+    setLastEvaluatedJobDescription('')
   }
 
   const handleSendMessage = (text: string) => {
@@ -378,13 +427,27 @@ function HomePage() {
       </aside>
 
       <div className="mx-auto max-w-3xl px-4 py-8">
-        <ProfileHeaderSection
-          name={candidateProfile.name}
-          headline={candidateProfile.headline}
-          subHeadline={candidateProfile.subHeadline}
-        />
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <ProfileHeaderSection
+            name={activeProfile.name}
+            headline={activeProfile.headline}
+            subHeadline={activeProfile.subHeadline}
+          />
+          <div className="flex shrink-0 flex-col items-start gap-2">
+            <div className="flex flex-wrap gap-2">
+              <ExportProfileButton profile={activeProfile} />
+              <ImportProfileButton
+                onProfileImported={handleProfileImported}
+                onImportError={setProfileImportError}
+              />
+            </div>
+            {profileImportError && (
+              <p className="text-xs text-red-700">{profileImportError}</p>
+            )}
+          </div>
+        </div>
 
-        <ExperienceSection experience={candidateProfile.experience} />
+        <ExperienceSection experience={activeProfile.experience} />
 
         <JobDescriptionFitSection
           jobDescription={jobDescription}

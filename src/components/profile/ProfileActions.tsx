@@ -11,6 +11,8 @@ export function ProfileActions({ onProfileImported }: ProfileActionsProps) {
   const {
     activeProfile,
     setActiveProfile,
+    hasProfile,
+    clearProfile,
     profileImportError,
     setProfileImportError,
   } = useProfileContext()
@@ -23,11 +25,20 @@ export function ProfileActions({ onProfileImported }: ProfileActionsProps) {
   return (
     <div className="flex shrink-0 flex-col items-start gap-2">
       <div className="flex flex-wrap gap-2">
-        <ExportProfileButton profile={activeProfile} />
+        {activeProfile && <ExportProfileButton profile={activeProfile} />}
         <ImportProfileButton
           onProfileImported={handleProfileImported}
           onImportError={setProfileImportError}
         />
+        {hasProfile && (
+          <button
+            type="button"
+            className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-surface px-3 text-sm font-medium text-text transition-colors hover:bg-slate-100"
+            onClick={clearProfile}
+          >
+            Clear profile
+          </button>
+        )}
       </div>
       {profileImportError && (
         <div className="mt-2 flex items-center gap-2">

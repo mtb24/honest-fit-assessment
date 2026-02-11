@@ -19,6 +19,7 @@ import { ProfileHeaderSection } from '@/components/profile/ProfileHeaderSection'
 import { ProfileActions } from '@/components/profile/ProfileActions'
 import { JobDescriptionFitSection } from '@/components/profile/JobDescriptionFitSection'
 import { CandidateChatSection } from '@/components/profile/CandidateChatSection'
+import { ProfileOnboarding } from '@/components/profile/ProfileOnboarding'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -49,7 +50,7 @@ const DEFAULT_UI_SETTINGS: UiLlmSettings = {
 }
 
 function HomePage() {
-  const { activeProfile } = useProfileContext()
+  const { activeProfile, hasProfile } = useProfileContext()
   const [jobDescription, setJobDescription] = useState('')
   const [lastEvaluatedJobDescription, setLastEvaluatedJobDescription] = useState('')
   const [fitResult, setFitResult] = useState<FitResult | null>(null)
@@ -151,14 +152,18 @@ function HomePage() {
   const runtimeSettings = toRuntimeSettings(llmSettings)
 
   const assessMutation = useMutation({
-    mutationFn: (jd: string) =>
-      assessFit({
+    mutationFn: (jd: string) => {
+      if (!activeProfile) {
+        throw new Error('Please create or import a profile first.')
+      }
+      return assessFit({
         data: {
           jobDescription: jd,
           profile: activeProfile,
           llmSettings: runtimeSettings,
         },
-      }),
+      })
+    },
     onSuccess: (data, jd) => {
       setFitResult(data)
       setLastEvaluatedJobDescription(jd.trim())
@@ -173,15 +178,19 @@ function HomePage() {
   )
 
   const chatMutation = useMutation({
-    mutationFn: (msgs: ChatMessage[]) =>
-      chatAboutCandidate({
+    mutationFn: (msgs: ChatMessage[]) => {
+      if (!activeProfile) {
+        throw new Error('Please create or import a profile first.')
+      }
+      return chatAboutCandidate({
         data: {
           profile: activeProfile,
           userMessages: msgs,
           requirements: hasFreshRoleContext ? fitResult?.requirements : undefined,
           llmSettings: runtimeSettings,
         },
-      }),
+      })
+    },
     onSuccess: (data) => setMessages(data.messages),
   })
 
@@ -201,8 +210,10 @@ function HomePage() {
         ? 'Failed to load models.'
         : null
 
-  const firstName = activeProfile.name.split(' ')[0] || activeProfile.name
-  const topHighlights = getTopProfileHighlights(activeProfile)
+  const firstName = activeProfile
+    ? activeProfile.name.split(' ')[0] || activeProfile.name
+    : 'candidate'
+  const topHighlights = activeProfile ? getTopProfileHighlights(activeProfile) : []
 
   const handleAssess = () => {
     assessMutation.mutate(jobDescription)
@@ -401,65 +412,71 @@ function HomePage() {
       </aside>
 
       <div className="mx-auto max-w-3xl px-4 py-8">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <ProfileHeaderSection
-            name={activeProfile.name}
-            headline={activeProfile.headline}
-            subHeadline={activeProfile.subHeadline}
-          />
-          <ProfileActions onProfileImported={handleProfileImported} />
-        </div>
+        {!hasProfile && <ProfileOnboarding />}
 
-        <Card className="mb-6 ring-1 ring-slate-200">
-          <h2 className="text-lg font-semibold text-slate-900">Candidate Snapshot</h2>
-          <p className="mt-1 text-sm text-slate-600">{activeProfile.location}</p>
-          <p className="mt-2 text-sm text-slate-700">{activeProfile.summary}</p>
-
-          {topHighlights.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-sm font-semibold text-slate-800">Top 3 highlights</h3>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                {topHighlights.map((highlight) => (
-                  <li key={highlight}>{highlight}</li>
-                ))}
-              </ul>
+        {hasProfile && activeProfile && (
+          <>
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <ProfileHeaderSection
+                name={activeProfile.name}
+                headline={activeProfile.headline}
+                subHeadline={activeProfile.subHeadline}
+              />
+              <ProfileActions onProfileImported={handleProfileImported} />
             </div>
-          )}
-        </Card>
 
-        <JobDescriptionFitSection
-          jobDescription={jobDescription}
-          onJobDescriptionChange={setJobDescription}
-          onAssess={handleAssess}
-          assessPending={assessMutation.isPending}
-          assessError={
-            assessMutation.isError
-              ? assessMutation.error instanceof Error
-                ? assessMutation.error.message
-                : 'Something went wrong.'
-              : null
-          }
-          fitResult={fitResult}
-          showFitDebug={llmSettings.showFitDebug}
-        />
+            <Card className="mb-6 ring-1 ring-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900">Candidate Snapshot</h2>
+              <p className="mt-1 text-sm text-slate-600">{activeProfile.location}</p>
+              <p className="mt-2 text-sm text-slate-700">{activeProfile.summary}</p>
 
-        <CandidateChatSection
-          firstName={firstName}
-          hasFreshRoleContext={hasFreshRoleContext}
-          suggestedQuestions={SUGGESTED_QUESTIONS}
-          messages={messages}
-          chatInput={chatInput}
-          onChatInputChange={setChatInput}
-          onSendMessage={handleSendMessage}
-          chatPending={chatMutation.isPending}
-          chatError={
-            chatMutation.isError
-              ? chatMutation.error instanceof Error
-                ? chatMutation.error.message
-                : 'Something went wrong.'
-              : null
-          }
-        />
+              {topHighlights.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-semibold text-slate-800">Top 3 highlights</h3>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                    {topHighlights.map((highlight) => (
+                      <li key={highlight}>{highlight}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Card>
+
+            <JobDescriptionFitSection
+              jobDescription={jobDescription}
+              onJobDescriptionChange={setJobDescription}
+              onAssess={handleAssess}
+              assessPending={assessMutation.isPending}
+              assessError={
+                assessMutation.isError
+                  ? assessMutation.error instanceof Error
+                    ? assessMutation.error.message
+                    : 'Something went wrong.'
+                  : null
+              }
+              fitResult={fitResult}
+              showFitDebug={llmSettings.showFitDebug}
+            />
+
+            <CandidateChatSection
+              firstName={firstName}
+              hasFreshRoleContext={hasFreshRoleContext}
+              suggestedQuestions={SUGGESTED_QUESTIONS}
+              messages={messages}
+              chatInput={chatInput}
+              onChatInputChange={setChatInput}
+              onSendMessage={handleSendMessage}
+              chatPending={chatMutation.isPending}
+              chatError={
+                chatMutation.isError
+                  ? chatMutation.error instanceof Error
+                    ? chatMutation.error.message
+                    : 'Something went wrong.'
+                  : null
+              }
+            />
+          </>
+        )}
       </div>
     </>
   )

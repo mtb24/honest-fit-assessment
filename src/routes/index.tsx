@@ -21,6 +21,7 @@ import { ProfileActions } from '@/components/profile/ProfileActions'
 import { JobDescriptionFitSection } from '@/components/profile/JobDescriptionFitSection'
 import { CandidateChatSection } from '@/components/profile/CandidateChatSection'
 import { RecentRolesPanel } from '@/components/fit/RecentRolesPanel'
+import { CompareRolesSummary } from '@/components/fit/CompareRolesSummary'
 import { RecentRoleDetails } from '@/components/fit/RecentRoleDetails'
 import {
   addRecentRole,
@@ -619,6 +620,7 @@ function HomePage() {
               onSelect={handleSelectRecentRole}
               onClear={handleClearRecentRoles}
             />
+            <CompareRolesSummary roles={recentRoles} />
             <RecentRoleDetails role={activeRecentRole} />
           </div>
         </div>

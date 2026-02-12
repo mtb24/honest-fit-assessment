@@ -1,32 +1,37 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { candidateProfileSchema } from '@/data/candidateProfile.schema'
-import type { CandidateProfile, FitResult } from '@/data/types'
+import type { CandidateProfile, FitResult, InterviewBulletsResult } from '@/data/types'
 import { callLlmText } from '@/lib/llm/client'
 import type { LlmRuntimeSettings } from '@/lib/llm/types'
 import { fitResultSchema, llmSettingsSchema } from '@/server/fitSchemas'
 
-const applicationBlurbInputSchema = z.object({
+const interviewBulletsInputSchema = z.object({
   jobDescription: z.string().min(40),
   profile: candidateProfileSchema,
   fit: fitResultSchema,
   llmSettings: llmSettingsSchema,
 })
 
-export async function generateApplicationBlurbOnServer(params: {
+export async function generateInterviewBulletsOnServer(params: {
   jobDescription: string
   profile: CandidateProfile
   fit: FitResult
   llmSettings?: LlmRuntimeSettings
-}): Promise<{ paragraph: string }> {
+}): Promise<InterviewBulletsResult> {
   const systemPrompt = `
-You help a candidate write concise, honest job application answers.
-Write exactly one paragraph of 3-5 sentences that:
-- explains why they are a strong fit for this role,
-- includes 1-2 specific strengths aligned to the job,
-- includes one gap or ramp-up area framed constructively.
-Be concrete, avoid buzzwords, and do not exaggerate beyond the provided profile and fit evidence.
-Return only the paragraph.
+You help a candidate prepare for interviews with concise, honest talking points.
+Generate 5-7 bullet points the candidate can use when asked:
+- "Why are you a strong fit for this role?"
+- "Where would you expect to ramp up?"
+
+Requirements:
+- Include 3-5 "good fit" bullets grounded in profile + fit evidence.
+- Include 1-2 constructive "ramp-up / questions to ask" bullets based on real gaps.
+- Do not invent experience, tools, or outcomes not present in the profile/fit.
+- Avoid generic fluff and avoid repeating the job description verbatim.
+
+Return ONLY the bullet list, one bullet per line.
   `.trim()
 
   const userPrompt = `
@@ -40,9 +45,9 @@ Fit assessment result (JSON):
 ${JSON.stringify(params.fit, null, 2)}
   `.trim()
 
-  let paragraph: string
+  let rawResponse: string
   try {
-    paragraph = await callLlmText({
+    rawResponse = await callLlmText({
       system: systemPrompt,
       user: userPrompt,
       settings: params.llmSettings,
@@ -51,12 +56,38 @@ ${JSON.stringify(params.fit, null, 2)}
     throw mapLlmErrorToFriendlyMessage(error)
   }
 
-  return { paragraph: paragraph.replace(/\s+/g, ' ').trim() }
+  const bullets = parseInterviewBullets(rawResponse)
+  if (bullets.length < 5) {
+    throw new Error('The AI did not return enough interview bullets. Please try again.')
+  }
+
+  return { bullets: bullets.slice(0, 7) }
 }
 
-export const generateApplicationBlurbFn = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => applicationBlurbInputSchema.parse(data))
-  .handler(async ({ data }) => generateApplicationBlurbOnServer(data))
+export const generateInterviewBulletsFn = createServerFn({ method: 'POST' })
+  .inputValidator((data: unknown) => interviewBulletsInputSchema.parse(data))
+  .handler(async ({ data }) => generateInterviewBulletsOnServer(data))
+
+function parseInterviewBullets(raw: string): string[] {
+  const fromLines = raw
+    .split('\n')
+    .map((line) => line.trim())
+    .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim())
+    .filter(Boolean)
+
+  const normalizedLineBullets = Array.from(new Set(fromLines))
+  if (normalizedLineBullets.length >= 5) {
+    return normalizedLineBullets
+  }
+
+  const fromSentences = raw
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .map((part) => part.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim())
+    .filter((part) => part.length > 0)
+
+  return Array.from(new Set([...normalizedLineBullets, ...fromSentences]))
+}
 
 function mapLlmErrorToFriendlyMessage(error: unknown): Error {
   const message = error instanceof Error ? error.message : String(error ?? '')

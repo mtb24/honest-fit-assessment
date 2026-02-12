@@ -11,6 +11,7 @@ import { toRuntimeSettings } from '@/lib/llmRuntimeSettings'
 import { CandidateChatSection } from '@/components/profile/CandidateChatSection'
 import { ReviewerOnboardingCard } from '@/components/reviewer/ReviewerOnboardingCard'
 import { ReviewerProfileCard } from '@/components/reviewer/ReviewerProfileCard'
+import { Card } from '@/components/ui/card'
 import { demoCandidateProfile } from '@/data/candidateProfile.demo'
 import { getTopProfileHighlights } from '@/lib/profileHighlights'
 
@@ -22,6 +23,12 @@ const REVIEWER_QUESTIONS = [
   'What are this candidate’s strongest technical skills?',
   'What kind of team environment would maximize this candidate’s impact?',
   'Where might this candidate need onboarding support?',
+]
+
+const REVIEWER_QA_GUIDANCE = [
+  'How does this candidate approach design systems and component libraries?',
+  'What kinds of roles do they seem best suited for?',
+  'Tell me about a project where they owned the system end-to-end.',
 ]
 
 function ReviewerPage() {
@@ -118,7 +125,17 @@ function ReviewerPage() {
           />
         ) : (
           <div className="space-y-4">
-            <ReviewerProfileCard profile={activeProfile} highlights={highlights} />
+            <ReviewerProfileCard profile={activeProfile} />
+            {highlights.length > 0 && (
+              <Card className="ring-1 ring-slate-200">
+                <h2 className="text-base font-semibold text-slate-900">Profile highlights</h2>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                  {highlights.map((highlight) => (
+                    <li key={highlight}>{highlight}</li>
+                  ))}
+                </ul>
+              </Card>
+            )}
             <div>
               {modelHintMissing && (
                 <p className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
@@ -134,6 +151,7 @@ function ReviewerPage() {
                 onChatInputChange={setChatInput}
                 onSendMessage={handleSendMessage}
                 chatPending={chatMutation.isPending}
+                guidanceExamples={REVIEWER_QA_GUIDANCE}
                 chatError={
                   chatMutation.isError
                     ? chatMutation.error instanceof Error

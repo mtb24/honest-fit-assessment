@@ -1,9 +1,10 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import type { CandidateProfile, FitResult } from '@/data/types'
+import type { CandidateProfile, FitResult, InterviewBulletsResult } from '@/data/types'
 import { assessFitFn } from '@/server/assessFit'
 import { generateApplicationBlurbFn } from '@/server/generateApplicationBlurb'
+import { generateInterviewBulletsFn } from '@/server/generateInterviewBullets'
 import type { LlmRuntimeSettings } from '@/lib/llm/types'
 import { useProfileContext } from '@/contexts/ProfileContext'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -44,6 +45,7 @@ function CandidateFitPage() {
   const [recentRoles, setRecentRoles] = useState<RecentRole[]>([])
   const [activeRecentRoleId, setActiveRecentRoleId] = useState<string | null>(null)
   const [applicationParagraph, setApplicationParagraph] = useState('')
+  const [interviewBullets, setInterviewBullets] = useState<string[]>([])
   const [savedSnippets, setSavedSnippets] = useState<SavedSnippet[]>([])
   const {
     llmSettings,
@@ -68,6 +70,14 @@ function CandidateFitPage() {
       llmSettings?: LlmRuntimeSettings
     }
   }) => Promise<{ paragraph: string }>
+  const generateInterviewBullets = generateInterviewBulletsFn as unknown as (args: {
+    data: {
+      jobDescription: string
+      profile: CandidateProfile
+      fit: FitResult
+      llmSettings?: LlmRuntimeSettings
+    }
+  }) => Promise<InterviewBulletsResult>
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -94,6 +104,7 @@ function CandidateFitPage() {
   const handleFitSuccess = (fit: FitResult, evaluatedJobDescription: string) => {
     setFitResult(fit)
     setApplicationParagraph('')
+    setInterviewBullets([])
 
     const label = createRoleLabelFromJobDescription(evaluatedJobDescription)
     setRecentRoles((prev) => {
@@ -158,6 +169,33 @@ function CandidateFitPage() {
     },
   })
 
+  const interviewBulletsMutation = useMutation({
+    mutationFn: () => {
+      if (!activeProfile) {
+        throw new Error('Please create or import a profile first.')
+      }
+      if (!fitResult) {
+        throw new Error('Run an Honest Fit assessment before generating interview bullets.')
+      }
+      const trimmedJobDescription = jobDescription.trim()
+      if (trimmedJobDescription.length < 40) {
+        throw new Error('Please include the job description used for this fit assessment.')
+      }
+
+      return generateInterviewBullets({
+        data: {
+          jobDescription: trimmedJobDescription,
+          profile: activeProfile,
+          fit: fitResult,
+          llmSettings: runtimeSettings,
+        },
+      })
+    },
+    onSuccess: (data) => {
+      setInterviewBullets(data.bullets)
+    },
+  })
+
   const topHighlights = activeProfile ? getTopProfileHighlights(activeProfile) : []
   const canAssessWithProfile = Boolean(activeProfile)
   const missingProfileAssessHint =
@@ -170,16 +208,22 @@ function CandidateFitPage() {
 
   const handleProfileImported = (_profile: CandidateProfile) => {
     setFitResult(null)
+    setInterviewBullets([])
   }
 
   const handleGenerateApplicationAnswer = () => {
     applicationBlurbMutation.mutate()
   }
 
+  const handleGenerateInterviewBullets = () => {
+    interviewBulletsMutation.mutate()
+  }
+
   const handleSelectRecentRole = (role: RecentRole) => {
     setJobDescription(role.jobDescription)
     setFitResult(role.fit)
     setApplicationParagraph('')
+    setInterviewBullets([])
     setActiveRecentRoleId(role.id)
     assessMutation.reset()
   }
@@ -218,6 +262,12 @@ function CandidateFitPage() {
 
   const handleCopySavedSnippet = async (snippetText: string) => {
     await navigator.clipboard.writeText(snippetText)
+  }
+
+  const handleCopyInterviewBullets = async () => {
+    if (interviewBullets.length === 0) return
+    const payload = interviewBullets.map((bullet) => `• ${bullet}`).join('\n')
+    await navigator.clipboard.writeText(payload)
   }
 
   const handleDeleteSavedSnippet = (snippetId: string) => {
@@ -319,6 +369,17 @@ function CandidateFitPage() {
               applicationParagraph={applicationParagraph}
               onCopyApplicationAnswer={handleCopyApplicationAnswer}
               onSaveApplicationSnippet={handleSaveApplicationSnippet}
+              onGenerateInterviewBullets={handleGenerateInterviewBullets}
+              generateInterviewBulletsPending={interviewBulletsMutation.isPending}
+              generateInterviewBulletsError={
+                interviewBulletsMutation.isError
+                  ? interviewBulletsMutation.error instanceof Error
+                    ? interviewBulletsMutation.error.message
+                    : 'Failed to generate interview bullets.'
+                  : null
+              }
+              interviewBullets={interviewBullets}
+              onCopyInterviewBullets={handleCopyInterviewBullets}
             />
           </section>
 

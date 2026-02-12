@@ -13,6 +13,7 @@ type CandidateChatSectionProps = {
   onSendMessage: (value: string) => void
   chatPending: boolean
   chatError: string | null
+  guidanceExamples?: string[]
 }
 
 export function CandidateChatSection({
@@ -25,6 +26,7 @@ export function CandidateChatSection({
   onSendMessage,
   chatPending,
   chatError,
+  guidanceExamples,
 }: CandidateChatSectionProps) {
   return (
     <Card className="ring-1 ring-slate-200">
@@ -68,15 +70,29 @@ export function CandidateChatSection({
             <div>{msg.content}</div>
           </div>
         ))}
+        {chatPending && (
+          <div className="mb-1">
+            <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-700">
+              assistant
+            </div>
+            <div className="text-sm text-slate-600">Thinking...</div>
+          </div>
+        )}
       </div>
+      {guidanceExamples && guidanceExamples.length > 0 && (
+        <p className="mb-2 text-xs text-slate-500">
+          Try asking: {guidanceExamples.join(' | ')}
+        </p>
+      )}
       <div className="flex gap-2">
         <Input
           type="text"
           placeholder="Ask about this candidate…"
           value={chatInput}
           onChange={(e) => onChatInputChange(e.target.value)}
+          readOnly={chatPending}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') onSendMessage(chatInput)
+            if (e.key === 'Enter' && !chatPending) onSendMessage(chatInput)
           }}
         />
         <Button
@@ -84,7 +100,7 @@ export function CandidateChatSection({
           onClick={() => onSendMessage(chatInput)}
           disabled={!chatInput.trim() || chatPending}
         >
-          {chatPending ? '…' : 'Send'}
+          {chatPending ? 'Thinking...' : 'Send'}
         </Button>
       </div>
       {chatError && <p className="mt-2 text-sm text-red-800">{chatError}</p>}

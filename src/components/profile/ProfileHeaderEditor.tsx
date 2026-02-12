@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -16,6 +16,7 @@ export function ProfileHeaderEditor({ profile, onSave }: ProfileHeaderEditorProp
   const [headline, setHeadline] = useState(profile.headline)
   const [summary, setSummary] = useState(profile.summary)
   const [coreStrengthsText, setCoreStrengthsText] = useState(profile.coreStrengths.join('\n'))
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setName(profile.name)
@@ -24,15 +25,25 @@ export function ProfileHeaderEditor({ profile, onSave }: ProfileHeaderEditorProp
     setCoreStrengthsText(profile.coreStrengths.join('\n'))
   }, [profile])
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setName(profile.name)
     setHeadline(profile.headline)
     setSummary(profile.summary)
-    setCoreStrengthsText(profile.coreStrengths.join('\n'))
+    setCoreStrengthsText((profile.coreStrengths ?? []).join('\n'))
+    setError(null)
     setIsEditing(false)
-  }
+  }, [profile])
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
+    const trimmedName = name.trim()
+    const trimmedHeadline = headline.trim()
+    const trimmedSummary = summary.trim()
+
+    if (!trimmedName || !trimmedHeadline) {
+      setError('Name and headline are required.')
+      return
+    }
+
     const nextCoreStrengths = coreStrengthsText
       .split('\n')
       .map((strength) => strength.trim())
@@ -40,15 +51,38 @@ export function ProfileHeaderEditor({ profile, onSave }: ProfileHeaderEditorProp
 
     const updatedProfile: CandidateProfile = {
       ...profile,
-      name: name.trim() || profile.name,
-      headline: headline.trim() || profile.headline,
-      summary: summary.trim() || profile.summary,
+      name: trimmedName,
+      headline: trimmedHeadline,
+      summary: trimmedSummary,
       coreStrengths: nextCoreStrengths.length > 0 ? nextCoreStrengths : profile.coreStrengths,
     }
 
+    setError(null)
     onSave(updatedProfile)
     setIsEditing(false)
-  }
+  }, [name, headline, summary, coreStrengthsText, profile, onSave])
+
+  useEffect(() => {
+    if (!isEditing) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        handleCancel()
+        return
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault()
+        handleSave()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isEditing, handleCancel, handleSave])
 
   return (
     <Card className="mb-6 ring-1 ring-slate-200">
@@ -134,6 +168,7 @@ export function ProfileHeaderEditor({ profile, onSave }: ProfileHeaderEditorProp
               Save changes
             </Button>
           </div>
+          {error ? <p className="mt-2 text-xs text-red-400">{error}</p> : null}
         </div>
       )}
     </Card>

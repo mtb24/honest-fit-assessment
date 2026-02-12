@@ -291,25 +291,7 @@ function HomePage() {
     )
   }, [availableModels])
 
-  if (!hasProfile || !activeProfile) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-12">
-        <Card className="ring-1 ring-slate-200">
-          <h1 className="text-xl font-semibold text-slate-900">Honest Fit Assessment</h1>
-          <p className="mt-2 text-sm text-slate-700">
-            To get an honest fit assessment, you first need a candidate profile.
-          </p>
-          <div className="mt-4">
-            <Link to="/candidate-profile" className={buttonVariants()}>
-              Set up my profile
-            </Link>
-          </div>
-        </Card>
-      </div>
-    )
-  }
-
-  return (
+  const settingsSidebar = (
     <>
       <div
         className={`fixed inset-0 z-40 bg-slate-900/40 transition-opacity duration-300 ${
@@ -476,7 +458,33 @@ function HomePage() {
           </div>
         </div>
       </aside>
+    </>
+  )
 
+  if (!hasProfile || !activeProfile) {
+    return (
+      <>
+        {settingsSidebar}
+        <div className="mx-auto max-w-3xl px-4 py-12">
+          <Card className="ring-1 ring-slate-200">
+            <h1 className="text-xl font-semibold text-slate-900">Honest Fit Assessment</h1>
+            <p className="mt-2 text-sm text-slate-700">
+              To get an honest fit assessment, you first need a candidate profile.
+            </p>
+            <div className="mt-4">
+              <Link to="/candidate-profile" className={buttonVariants()}>
+                Set up my profile
+              </Link>
+            </div>
+          </Card>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      {settingsSidebar}
       <div className="mx-auto max-w-3xl px-4 py-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <ProfileHeaderSection
@@ -487,49 +495,49 @@ function HomePage() {
           <ProfileActions onProfileImported={handleProfileImported} />
         </div>
 
-        <Card className="mb-6 ring-1 ring-slate-200">
-          <h2 className="text-lg font-semibold text-slate-900">Candidate Snapshot</h2>
-          <p className="mt-1 text-sm text-slate-600">{activeProfile.location}</p>
-          <p className="mt-2 text-sm text-slate-700">{activeProfile.summary}</p>
+          <Card className="mb-6 ring-1 ring-slate-200">
+            <h2 className="text-lg font-semibold text-slate-900">Candidate Snapshot</h2>
+            <p className="mt-1 text-sm text-slate-600">{activeProfile.location}</p>
+            <p className="mt-2 text-sm text-slate-700">{activeProfile.summary}</p>
 
-          {topHighlights.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-sm font-semibold text-slate-800">Top 3 highlights</h3>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                {topHighlights.map((highlight) => (
-                  <li key={highlight}>{highlight}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </Card>
+            {topHighlights.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-semibold text-slate-800">Top 3 highlights</h3>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                  {topHighlights.map((highlight) => (
+                    <li key={highlight}>{highlight}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Card>
 
-        <JobDescriptionFitSection
-          jobDescription={jobDescription}
-          onJobDescriptionChange={setJobDescription}
-          onAssess={handleAssess}
-          assessPending={assessMutation.isPending}
-          assessError={
-            assessMutation.isError
-              ? assessMutation.error instanceof Error
-                ? assessMutation.error.message
-                : 'Something went wrong.'
-              : null
-          }
-          fitResult={fitResult}
-          showFitDebug={llmSettings.showFitDebug}
-          onGenerateApplicationAnswer={handleGenerateApplicationAnswer}
-          generateApplicationPending={applicationBlurbMutation.isPending}
-          generateApplicationError={
-            applicationBlurbMutation.isError
-              ? applicationBlurbMutation.error instanceof Error
-                ? applicationBlurbMutation.error.message
-                : 'Failed to generate application answer.'
-              : null
-          }
-          applicationParagraph={applicationParagraph}
-          onCopyApplicationAnswer={handleCopyApplicationAnswer}
-        />
+          <JobDescriptionFitSection
+            jobDescription={jobDescription}
+            onJobDescriptionChange={setJobDescription}
+            onAssess={handleAssess}
+            assessPending={assessMutation.isPending}
+            assessError={
+              assessMutation.isError
+                ? assessMutation.error instanceof Error
+                  ? assessMutation.error.message
+                  : 'Something went wrong.'
+                : null
+            }
+            fitResult={fitResult}
+            showFitDebug={llmSettings.showFitDebug}
+            onGenerateApplicationAnswer={handleGenerateApplicationAnswer}
+            generateApplicationPending={applicationBlurbMutation.isPending}
+            generateApplicationError={
+              applicationBlurbMutation.isError
+                ? applicationBlurbMutation.error instanceof Error
+                  ? applicationBlurbMutation.error.message
+                  : 'Failed to generate application answer.'
+                : null
+            }
+            applicationParagraph={applicationParagraph}
+            onCopyApplicationAnswer={handleCopyApplicationAnswer}
+          />
 
         <CandidateChatSection
           firstName={firstName}

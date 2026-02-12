@@ -2,12 +2,12 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react'
-import { candidateProfile as exampleCandidateProfile } from '@/data/currentProfile'
+import { exampleCandidateProfile } from '@/data/candidateProfile.example'
+import { initialCandidateProfile } from '@/data/currentProfile'
 import type { CandidateProfile } from '@/data/types'
 import { exportProfileToJson, parseExportedProfileJson } from '@/lib/profileSerialization'
 
@@ -26,35 +26,20 @@ type ProfileContextValue = {
 const ProfileContext = createContext<ProfileContextValue | null>(null)
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const [activeProfile, setActiveProfileState] = useState<CandidateProfile | null>(null)
+  const [activeProfile, setActiveProfileState] = useState<CandidateProfile | null>(
+    loadInitialActiveProfile,
+  )
   const [profileImportError, setProfileImportError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const savedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY)
-    if (!savedProfile) return
-
-    try {
-      const profile = parseExportedProfileJson(savedProfile)
-      setActiveProfileState(profile)
-    } catch (error) {
-      console.error('Failed to parse stored profile', error)
-      setProfileImportError('Stored profile is invalid. Please re-import or rebuild your profile.')
-    }
-  }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (!activeProfile) {
-      window.localStorage.removeItem(PROFILE_STORAGE_KEY)
-      return
-    }
-    window.localStorage.setItem(PROFILE_STORAGE_KEY, exportProfileToJson(activeProfile))
-  }, [activeProfile])
 
   const setActiveProfile = useCallback((profile: CandidateProfile | null) => {
     setProfileImportError(null)
     setActiveProfileState(profile)
+    if (typeof window === 'undefined') return
+    if (!profile) {
+      window.localStorage.removeItem(PROFILE_STORAGE_KEY)
+      return
+    }
+    window.localStorage.setItem(PROFILE_STORAGE_KEY, exportProfileToJson(profile))
   }, [])
 
   const clearProfile = useCallback(() => {
@@ -93,4 +78,18 @@ export function useProfileContext(): ProfileContextValue {
     throw new Error('useProfileContext must be used inside ProfileProvider.')
   }
   return context
+}
+
+function loadInitialActiveProfile(): CandidateProfile | null {
+  if (typeof window === 'undefined') return initialCandidateProfile
+  const savedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY)
+  if (!savedProfile) return initialCandidateProfile
+
+  try {
+    return parseExportedProfileJson(savedProfile)
+  } catch (error) {
+    console.error('Failed to parse stored profile', error)
+    window.localStorage.removeItem(PROFILE_STORAGE_KEY)
+    return initialCandidateProfile
+  }
 }

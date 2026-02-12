@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "lint": "tsc --noEmit",
     "build": "vite build",
     "preview": "vite preview"
   },

@@ -10,6 +10,11 @@ export async function parseResumeToProfileOnServer(
   if (!resumeText || resumeText.trim().length < 80) {
     throw new Error('Please paste a reasonably complete resume before parsing.')
   }
+  if (!llmSettings?.provider || !llmSettings?.model?.trim()) {
+    throw new Error(
+      'No AI provider/model selected. Open settings and choose a provider before building a profile.',
+    )
+  }
 
   return parseResumeToProfileWithLLM({
     resumeText,

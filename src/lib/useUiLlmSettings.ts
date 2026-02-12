@@ -24,9 +24,8 @@ export const DEFAULT_UI_SETTINGS: UiLlmSettings = {
 }
 
 export function useUiLlmSettings() {
-  const [llmSettings, setLlmSettings] = useState<UiLlmSettings>(() =>
-    readUiSettingsFromStorage(),
-  )
+  const [llmSettings, setLlmSettings] = useState<UiLlmSettings>(() => DEFAULT_UI_SETTINGS)
+  const [hasHydratedSettings, setHasHydratedSettings] = useState(false)
 
   const getLlmModels = getLlmModelsFn as unknown as (args: {
     data: { provider: KnownProvider }
@@ -50,8 +49,28 @@ export function useUiLlmSettings() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    const saved = window.localStorage.getItem(SETTINGS_STORAGE_KEY)
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as Partial<UiLlmSettings>
+        setLlmSettings((prev) => ({
+          ...prev,
+          ...parsed,
+        }))
+      } catch {
+        // Ignore malformed localStorage payloads.
+      }
+    }
+
+    setHasHydratedSettings(true)
+  }, [])
+
+  useEffect(() => {
+    if (!hasHydratedSettings) return
+    if (typeof window === 'undefined') return
     window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(llmSettings))
-  }, [llmSettings])
+  }, [hasHydratedSettings, llmSettings])
 
   useEffect(() => {
     if (!availableModels.length) return
@@ -74,21 +93,5 @@ export function useUiLlmSettings() {
     modelLoadError,
     modelsQuery,
     resetSettings,
-  }
-}
-
-function readUiSettingsFromStorage(): UiLlmSettings {
-  if (typeof window === 'undefined') return DEFAULT_UI_SETTINGS
-  const saved = window.localStorage.getItem(SETTINGS_STORAGE_KEY)
-  if (!saved) return DEFAULT_UI_SETTINGS
-
-  try {
-    const parsed = JSON.parse(saved) as Partial<UiLlmSettings>
-    return {
-      ...DEFAULT_UI_SETTINGS,
-      ...parsed,
-    }
-  } catch {
-    return DEFAULT_UI_SETTINGS
   }
 }

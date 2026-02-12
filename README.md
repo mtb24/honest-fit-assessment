@@ -1,5 +1,3 @@
-Here’s a combined README that keeps all your solid engineering detail but adds the more “product-y” framing up top:
-
 # Honest Fit Assistant
 
 Honest Fit Assistant is an AI-powered tool for stress-testing how well a candidate actually fits a job description.

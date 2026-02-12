@@ -18,15 +18,100 @@ const RequirementMatchSchema = z.object({
 
 const RequirementMatchArraySchema = z.array(RequirementMatchSchema).min(1)
 
+function deriveProfileFacts(profile: CandidateProfile): string[] {
+  const facts: string[] = []
+  const skillBuckets = profile.skills ?? {}
+  const allSkillValues = Object.values(skillBuckets).flatMap((values) => values ?? [])
+
+  const hasSkill = (pattern: RegExp, keys?: string[]) => {
+    const source =
+      keys && keys.length > 0
+        ? keys.flatMap((key) => skillBuckets[key] ?? [])
+        : allSkillValues
+    return source.some((value) => pattern.test(value))
+  }
+
+  const hasExperienceText = (pattern: RegExp) => {
+    return profile.experience.some((exp) => {
+      const stackText = (exp.stack ?? []).join(' ')
+      const highlightsText = (exp.highlights ?? []).join(' ')
+      const combined = `${exp.domain ?? ''} ${exp.role ?? ''} ${stackText} ${highlightsText}`
+      return pattern.test(combined)
+    })
+  }
+
+  if (hasSkill(/react/i, ['frontend']) || hasExperienceText(/\breact\b/i)) {
+    facts.push('Candidate has significant experience building SPAs with React.')
+  }
+  if (hasSkill(/typescript/i, ['frontend']) || hasExperienceText(/\btypescript|\bts\b/i)) {
+    facts.push('Candidate is comfortable using TypeScript in production.')
+  }
+  if (
+    hasSkill(/next\.?js|ssr|server[- ]side rendering/i, ['frontend']) ||
+    hasExperienceText(/next\.?js|ssr|server[- ]side rendering/i)
+  ) {
+    facts.push('Candidate has experience with Next.js and/or SSR rendering patterns.')
+  }
+  if (
+    hasSkill(/design system|component librar/i, ['designSystems']) ||
+    hasExperienceText(/design system|component librar/i)
+  ) {
+    facts.push('Candidate has hands-on experience with design systems and component libraries.')
+  }
+  if (hasExperienceText(/\bb2b saas\b/i)) {
+    facts.push('Candidate has worked on B2B SaaS products.')
+  }
+  if (hasSkill(/jest/i, ['testing']) || hasExperienceText(/\bjest\b/i)) {
+    facts.push('Candidate has written tests with Jest.')
+  }
+  if (
+    hasSkill(/cypress|playwright/i, ['testing']) ||
+    hasExperienceText(/\bcypress\b|\bplaywright\b/i)
+  ) {
+    facts.push('Candidate has written end-to-end tests (for example Cypress or Playwright).')
+  }
+  if (hasSkill(/storybook/i, ['designSystems', 'frontend']) || hasExperienceText(/storybook/i)) {
+    facts.push('Candidate has used Storybook or similar tooling for UI development.')
+  }
+  if (
+    hasSkill(/accessibility|a11y|wcag/i, ['frontend']) ||
+    hasExperienceText(/accessibility|a11y|wcag/i)
+  ) {
+    facts.push('Candidate has applied accessibility practices in frontend work.')
+  }
+  if (
+    hasSkill(/mentor|lead|leadership/i) ||
+    hasExperienceText(/mentor|mentoring|lead|leadership/)
+  ) {
+    facts.push('Candidate has experience with mentoring or technical leadership responsibilities.')
+  }
+  if (
+    hasSkill(/cursor|chatgpt|claude|llm|ai/i, ['aiTools']) ||
+    hasExperienceText(/cursor|chatgpt|claude|llm|ai/i)
+  ) {
+    facts.push(
+      'Candidate regularly uses AI tools (for example Cursor and LLM assistants) as part of the development workflow.',
+    )
+  }
+
+  return facts
+}
+
 export async function analyzeRequirementsWithLLM(params: {
   jobDescription: string
   profile: CandidateProfile
   llmSettings?: LlmRuntimeSettings
 }): Promise<RequirementMatch[]> {
   const { jobDescription, profile, llmSettings } = params
+  const profileFacts = deriveProfileFacts(profile)
+  const factsSection =
+    profileFacts.length > 0
+      ? `- ${profileFacts.join('\n- ')}`
+      : '- No additional derived facts available; rely on the profile JSON.'
 
   const systemPrompt = `
 You are helping evaluate how well a candidate matches a job description.
+You are given a set of FACTS about the candidate derived from profile data.
 
 Your ONLY task in this step is to:
 - Extract the most important requirements/responsibilities from the job description.
@@ -38,6 +123,10 @@ Your ONLY task in this step is to:
 - Provide a short "evidence" string when evidence exists, grounded explicitly in the profile.
 
 IMPORTANT INTERPRETATION RULES:
+
+- Treat the provided FACTS section as ground truth.
+- You MUST NOT claim "no evidence" for any capability that appears in the FACTS list.
+- For adjacent requirements (for example B2B SaaS vs marketing sites, or design systems vs broader frontend ownership), describe transferability as "partial" when not identical, rather than "none".
 
 - You MUST use semantic reasoning, not exact string matching.
   - If the profile shows multi-year React/TypeScript SPA work, that counts as expert-level React/TypeScript unless the job requires something very different.
@@ -74,6 +163,9 @@ Return ONLY a JSON array of objects with shape:
   const userPrompt = `
 Candidate profile (JSON):
 ${JSON.stringify(profile, null, 2)}
+
+FACTS ABOUT THIS CANDIDATE (treat these as ground truth; do not claim the opposite of these):
+${factsSection}
 
 Job description:
 ${jobDescription}

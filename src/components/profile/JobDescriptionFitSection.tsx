@@ -20,6 +20,7 @@ type JobDescriptionFitSectionProps = {
   generateApplicationError: string | null
   applicationParagraph: string
   onCopyApplicationAnswer: () => Promise<void>
+  onSaveApplicationSnippet: () => void
 }
 
 export function JobDescriptionFitSection({
@@ -37,6 +38,7 @@ export function JobDescriptionFitSection({
   generateApplicationError,
   applicationParagraph,
   onCopyApplicationAnswer,
+  onSaveApplicationSnippet,
 }: JobDescriptionFitSectionProps) {
   const [copiedApplicationAnswer, setCopiedApplicationAnswer] = useState(false)
   const hasValidJobDescription =
@@ -126,14 +128,24 @@ export function JobDescriptionFitSection({
                   {applicationParagraph}
                 </p>
                 <div className="mt-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCopyApplicationAnswer}
-                  >
-                    {copiedApplicationAnswer ? 'Copied' : 'Copy'}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCopyApplicationAnswer}
+                    >
+                      {copiedApplicationAnswer ? 'Copied' : 'Copy'}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={onSaveApplicationSnippet}
+                    >
+                      Save snippet
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

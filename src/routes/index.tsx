@@ -12,7 +12,7 @@ import { chatAboutCandidateFn } from '@/server/chatAboutCandidate'
 import { generateApplicationBlurbFn } from '../server/generateApplicationBlurb'
 import type { KnownProvider, LlmRuntimeSettings } from '@/lib/llm/types'
 import { useProfileContext } from '@/contexts/ProfileContext'
-import { buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ProfileHeaderSection } from '@/components/profile/ProfileHeaderSection'
 import { ProfileActions } from '@/components/profile/ProfileActions'
@@ -28,6 +28,13 @@ import {
   saveRecentRoles,
   type RecentRole,
 } from '@/lib/recentRoles'
+import {
+  addSavedSnippet,
+  loadSavedSnippets,
+  removeSavedSnippet,
+  saveSavedSnippets,
+  type SavedSnippet,
+} from '@/lib/savedSnippets'
 import { LlmSettingsSidebar } from '@/components/settings/LlmSettingsSidebar'
 import { type UiLlmSettings, useUiLlmSettings } from '@/lib/useUiLlmSettings'
 
@@ -51,6 +58,7 @@ function HomePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
   const [applicationParagraph, setApplicationParagraph] = useState('')
+  const [savedSnippets, setSavedSnippets] = useState<SavedSnippet[]>([])
   const {
     llmSettings,
     setLlmSettings,
@@ -92,6 +100,16 @@ function HomePage() {
     if (typeof window === 'undefined') return
     saveRecentRoles(recentRoles)
   }, [recentRoles])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setSavedSnippets(loadSavedSnippets())
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    saveSavedSnippets(savedSnippets)
+  }, [savedSnippets])
 
   const runtimeSettings = toRuntimeSettings(llmSettings)
 
@@ -240,6 +258,36 @@ function HomePage() {
     await navigator.clipboard.writeText(applicationParagraph)
   }
 
+  const handleSaveApplicationSnippet = () => {
+    const currentBlurbText = applicationParagraph.trim()
+    if (!currentBlurbText) return
+
+    const defaultLabel = activeRecentRole?.label
+      ? `${activeRecentRole.label} - application blurb`
+      : 'Application blurb'
+    const promptedLabel = window.prompt('Label for this snippet', defaultLabel)
+    if (promptedLabel === null) return
+
+    const label = promptedLabel.trim() || defaultLabel
+    const snippet: SavedSnippet = {
+      id: crypto.randomUUID(),
+      label,
+      roleLabel: activeRecentRole?.label,
+      text: currentBlurbText,
+      createdAt: new Date().toISOString(),
+    }
+
+    setSavedSnippets((prev) => addSavedSnippet(prev, snippet))
+  }
+
+  const handleCopySavedSnippet = async (snippetText: string) => {
+    await navigator.clipboard.writeText(snippetText)
+  }
+
+  const handleDeleteSavedSnippet = (snippetId: string) => {
+    setSavedSnippets((prev) => removeSavedSnippet(prev, snippetId))
+  }
+
   return (
     <>
       <LlmSettingsSidebar
@@ -334,6 +382,7 @@ function HomePage() {
               }
               applicationParagraph={applicationParagraph}
               onCopyApplicationAnswer={handleCopyApplicationAnswer}
+              onSaveApplicationSnippet={handleSaveApplicationSnippet}
             />
 
             {activeProfile ? (
@@ -378,6 +427,47 @@ function HomePage() {
               demoMode={llmSettings.demoMode}
               roleIndex={activeRecentRoleIndex >= 0 ? activeRecentRoleIndex : undefined}
             />
+            <Card className="ring-1 ring-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900">Saved snippets</h2>
+              {savedSnippets.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-600">No snippets saved yet.</p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {savedSnippets.map((snippet) => (
+                    <div
+                      key={snippet.id}
+                      className="rounded-md border border-slate-200 bg-white p-3"
+                    >
+                      <p className="text-sm font-medium text-slate-900">{snippet.label}</p>
+                      {snippet.roleLabel && (
+                        <p className="mt-0.5 text-xs text-slate-500">{snippet.roleLabel}</p>
+                      )}
+                      <p className="mt-1 text-xs text-slate-500">
+                        Saved {formatSavedDate(snippet.createdAt)}
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCopySavedSnippet(snippet.text)}
+                        >
+                          Copy
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteSavedSnippet(snippet.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
           </div>
         </div>
       </div>
@@ -419,4 +509,10 @@ function getTopProfileHighlights(profile: CandidateProfile): string[] {
     .filter(Boolean)
 
   return Array.from(new Set(candidateHighlights)).slice(0, 3)
+}
+
+function formatSavedDate(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10)
+  return date.toLocaleDateString()
 }

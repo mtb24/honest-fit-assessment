@@ -49,6 +49,7 @@ type UiLlmSettings = {
   temperature: string
   fallbackProvidersCsv: string
   showFitDebug: boolean
+  demoMode: boolean
 }
 
 const DEFAULT_UI_SETTINGS: UiLlmSettings = {
@@ -57,6 +58,7 @@ const DEFAULT_UI_SETTINGS: UiLlmSettings = {
   temperature: '0.2',
   fallbackProvidersCsv: '',
   showFitDebug: false,
+  demoMode: false,
 }
 
 function HomePage() {
@@ -225,6 +227,9 @@ function HomePage() {
   )
   const activeRecentRole =
     recentRoles.find((role) => role.id === activeRecentRoleId) ?? null
+  const activeRecentRoleIndex = activeRecentRole
+    ? recentRoles.findIndex((role) => role.id === activeRecentRole.id)
+    : -1
 
   const chatMutation = useMutation({
     mutationFn: (msgs: ChatMessage[]) => {
@@ -493,6 +498,21 @@ function HomePage() {
               />
               Show Fit debug details
             </label>
+
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary/30"
+                checked={llmSettings.demoMode}
+                onChange={(e) =>
+                  setLlmSettings((prev) => ({
+                    ...prev,
+                    demoMode: e.target.checked,
+                  }))
+                }
+              />
+              Demo mode (anonymize role labels)
+            </label>
           </div>
 
           <div className="border-t border-border p-5">
@@ -617,11 +637,16 @@ function HomePage() {
             <RecentRolesPanel
               roles={recentRoles}
               activeRoleId={activeRecentRoleId}
+              demoMode={llmSettings.demoMode}
               onSelect={handleSelectRecentRole}
               onClear={handleClearRecentRoles}
             />
-            <CompareRolesSummary roles={recentRoles} />
-            <RecentRoleDetails role={activeRecentRole} />
+            <CompareRolesSummary roles={recentRoles} demoMode={llmSettings.demoMode} />
+            <RecentRoleDetails
+              role={activeRecentRole}
+              demoMode={llmSettings.demoMode}
+              roleIndex={activeRecentRoleIndex >= 0 ? activeRecentRoleIndex : undefined}
+            />
           </div>
         </div>
       </div>

@@ -34,7 +34,12 @@ You MUST:
   • Highlight both strengths and gaps where relevant.
   • Answer in a way that is useful to a recruiter or hiring manager evaluating fit.
   • When role context is provided, anchor your answer to that requirement mapping.
-  • Keep answers concise but specific (2–6 sentences is usually enough).
+Format your answer for a recruiter or hiring manager reading on the web:
+  • Start with 1-2 short sentences that directly answer the question.
+  • Then use bullet points or short sections for details (for example: "Strengths", "Risks", "Examples").
+  • Avoid long, dense paragraphs and avoid repeating the question.
+  • Keep answers concise (roughly 150-300 words) unless the user explicitly asks for a deep dive.
+  • Use blank lines between paragraphs and bullet lists so the answer is easy to skim.
 Candidate profile (JSON):
 ${JSON.stringify(profile, null, 2)}
 Role context:

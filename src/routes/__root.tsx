@@ -12,6 +12,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { ProfileProvider, useProfileContext } from '@/contexts/ProfileContext'
+import { ToastProvider } from '@/context/ToastContext'
 import { Button } from '@/components/ui/button'
 import appCss from '~/styles/app.css?url'
 
@@ -33,11 +34,13 @@ function RootComponent() {
   const { queryClient } = useRouteContext({ from: '__root__' })
   return (
     <QueryClientProvider client={queryClient}>
-      <ProfileProvider>
-        <RootDocument>
-          <Outlet />
-        </RootDocument>
-      </ProfileProvider>
+      <ToastProvider>
+        <ProfileProvider>
+          <RootDocument>
+            <Outlet />
+          </RootDocument>
+        </ProfileProvider>
+      </ToastProvider>
     </QueryClientProvider>
   )
 }

@@ -1,4 +1,5 @@
 import { getDisplayLabelForRole, type RecentRole } from '@/lib/recentRoles'
+import { useToast } from '@/context/ToastContext'
 
 type RecentRoleDetailsProps = {
   role: RecentRole | null
@@ -41,6 +42,7 @@ export function RecentRoleDetails({
   demoMode = false,
   roleIndex,
 }: RecentRoleDetailsProps) {
+  const { showToast } = useToast()
   if (!role) {
     return (
       <section className="rounded-lg border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-600 ring-1 ring-slate-200">
@@ -74,8 +76,9 @@ export function RecentRoleDetails({
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(summaryText)
+      showToast('Copied to clipboard')
     } catch {
-      // Ignore clipboard failures so the panel stays non-blocking.
+      showToast('Failed to copy')
     }
   }
 

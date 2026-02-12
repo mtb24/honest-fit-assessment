@@ -45,3 +45,7 @@ export type ChatMessage = {
 export type ChatResponse = {
   messages: ChatMessage[]
 }
+
+export type InterviewBulletsResult = {
+  bullets: string[]
+}

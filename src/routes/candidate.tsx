@@ -3,7 +3,7 @@ import {
   Outlet,
   createFileRoute,
   redirect,
-  useRouterState,
+  useMatchRoute,
 } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/candidate')({
@@ -16,9 +16,9 @@ export const Route = createFileRoute('/candidate')({
 })
 
 function CandidateLayout() {
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const isProfileRoute = pathname.startsWith('/candidate/profile')
-  const isFitRoute = pathname.startsWith('/candidate/fit')
+  const matchRoute = useMatchRoute()
+  const isProfileRoute = Boolean(matchRoute({ to: '/candidate/profile', fuzzy: true }))
+  const isFitRoute = Boolean(matchRoute({ to: '/candidate/fit', fuzzy: true }))
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6">

@@ -21,6 +21,11 @@ type JobDescriptionFitSectionProps = {
   applicationParagraph: string
   onCopyApplicationAnswer: () => Promise<void>
   onSaveApplicationSnippet: () => void
+  onGenerateInterviewBullets: () => void
+  generateInterviewBulletsPending: boolean
+  generateInterviewBulletsError: string | null
+  interviewBullets: string[]
+  onCopyInterviewBullets: () => Promise<void>
 }
 
 export function JobDescriptionFitSection({
@@ -39,8 +44,14 @@ export function JobDescriptionFitSection({
   applicationParagraph,
   onCopyApplicationAnswer,
   onSaveApplicationSnippet,
+  onGenerateInterviewBullets,
+  generateInterviewBulletsPending,
+  generateInterviewBulletsError,
+  interviewBullets,
+  onCopyInterviewBullets,
 }: JobDescriptionFitSectionProps) {
   const [copiedApplicationAnswer, setCopiedApplicationAnswer] = useState(false)
+  const [copiedInterviewBullets, setCopiedInterviewBullets] = useState(false)
   const hasValidJobDescription =
     Boolean(jobDescription.trim()) && jobDescription.trim().length >= 40
   const isAssessDisabled = !canAssess || !hasValidJobDescription || assessPending
@@ -49,6 +60,12 @@ export function JobDescriptionFitSection({
     await onCopyApplicationAnswer()
     setCopiedApplicationAnswer(true)
     window.setTimeout(() => setCopiedApplicationAnswer(false), 1500)
+  }
+
+  const handleCopyInterviewBullets = async () => {
+    await onCopyInterviewBullets()
+    setCopiedInterviewBullets(true)
+    window.setTimeout(() => setCopiedInterviewBullets(false), 1500)
   }
 
   return (
@@ -146,6 +163,45 @@ export function JobDescriptionFitSection({
                       Save snippet
                     </Button>
                   </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded border border-slate-200 bg-slate-50 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-slate-800">Interview bullets</p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onGenerateInterviewBullets}
+                disabled={generateInterviewBulletsPending}
+              >
+                {generateInterviewBulletsPending
+                  ? 'Generating...'
+                  : 'Generate interview bullets'}
+              </Button>
+            </div>
+            {generateInterviewBulletsError && (
+              <p className="mt-2 text-xs text-red-700">{generateInterviewBulletsError}</p>
+            )}
+            {interviewBullets.length > 0 && (
+              <div className="mt-3 rounded border border-slate-300 bg-white p-3">
+                <ul className="list-disc space-y-1 pl-5 text-sm text-slate-800">
+                  {interviewBullets.map((bullet) => (
+                    <li key={bullet}>{bullet}</li>
+                  ))}
+                </ul>
+                <div className="mt-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCopyInterviewBullets}
+                  >
+                    {copiedInterviewBullets ? 'Copied' : 'Copy'}
+                  </Button>
                 </div>
               </div>
             )}

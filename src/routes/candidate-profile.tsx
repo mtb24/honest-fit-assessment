@@ -5,6 +5,7 @@ import { ResumeToProfileSection } from '@/components/profile/ResumeToProfileSect
 import { ExperienceSection } from '@/components/profile/ExperienceSection'
 import { ProfileStoriesSection } from '@/components/profile/ProfileStoriesSection'
 import { ProfileOnboarding } from '@/components/profile/ProfileOnboarding'
+import { ProfileCompleteness } from '@/components/profile/ProfileCompleteness'
 import { useProfileContext } from '@/contexts/ProfileContext'
 
 export const Route = createFileRoute('/candidate-profile')({
@@ -34,6 +35,8 @@ function CandidateProfilePage() {
       </div>
 
       <ProfileHeaderEditor profile={activeProfile} onSave={setActiveProfile} />
+
+      <ProfileCompleteness profile={activeProfile} />
 
       <ResumeToProfileSection
         onProfileImported={setActiveProfile}

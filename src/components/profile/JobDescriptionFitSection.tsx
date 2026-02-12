@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import type { FitResult } from '@/data/types'
 import { FitSummary } from '@/components/fit/FitSummary'
+import { InlineCopyButton } from '@/components/common/InlineCopyButton'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -19,13 +19,11 @@ type JobDescriptionFitSectionProps = {
   generateApplicationPending: boolean
   generateApplicationError: string | null
   applicationParagraph: string
-  onCopyApplicationAnswer: () => Promise<void>
   onSaveApplicationSnippet: () => void
   onGenerateInterviewBullets: () => void
   generateInterviewBulletsPending: boolean
   generateInterviewBulletsError: string | null
   interviewBullets: string[]
-  onCopyInterviewBullets: () => Promise<void>
 }
 
 export function JobDescriptionFitSection({
@@ -42,31 +40,15 @@ export function JobDescriptionFitSection({
   generateApplicationPending,
   generateApplicationError,
   applicationParagraph,
-  onCopyApplicationAnswer,
   onSaveApplicationSnippet,
   onGenerateInterviewBullets,
   generateInterviewBulletsPending,
   generateInterviewBulletsError,
   interviewBullets,
-  onCopyInterviewBullets,
 }: JobDescriptionFitSectionProps) {
-  const [copiedApplicationAnswer, setCopiedApplicationAnswer] = useState(false)
-  const [copiedInterviewBullets, setCopiedInterviewBullets] = useState(false)
   const hasValidJobDescription =
     Boolean(jobDescription.trim()) && jobDescription.trim().length >= 40
   const isAssessDisabled = !canAssess || !hasValidJobDescription || assessPending
-
-  const handleCopyApplicationAnswer = async () => {
-    await onCopyApplicationAnswer()
-    setCopiedApplicationAnswer(true)
-    window.setTimeout(() => setCopiedApplicationAnswer(false), 1500)
-  }
-
-  const handleCopyInterviewBullets = async () => {
-    await onCopyInterviewBullets()
-    setCopiedInterviewBullets(true)
-    window.setTimeout(() => setCopiedInterviewBullets(false), 1500)
-  }
 
   return (
     <Card className="mb-6 ring-1 ring-slate-200">
@@ -140,29 +122,23 @@ export function JobDescriptionFitSection({
               <p className="mt-2 text-xs text-red-700">{generateApplicationError}</p>
             )}
             {applicationParagraph && (
-              <div className="mt-3 rounded border border-slate-300 bg-white p-3">
+              <div className="relative mt-3 rounded border border-slate-300 bg-white p-3">
+                <InlineCopyButton
+                  text={applicationParagraph}
+                  ariaLabel="Copy application answer"
+                />
                 <p className="text-sm leading-relaxed text-slate-800">
                   {applicationParagraph}
                 </p>
                 <div className="mt-2">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={handleCopyApplicationAnswer}
-                    >
-                      {copiedApplicationAnswer ? 'Copied' : 'Copy'}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={onSaveApplicationSnippet}
-                    >
-                      Save snippet
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={onSaveApplicationSnippet}
+                  >
+                    Save snippet
+                  </Button>
                 </div>
               </div>
             )}
@@ -187,22 +163,16 @@ export function JobDescriptionFitSection({
               <p className="mt-2 text-xs text-red-700">{generateInterviewBulletsError}</p>
             )}
             {interviewBullets.length > 0 && (
-              <div className="mt-3 rounded border border-slate-300 bg-white p-3">
+              <div className="relative mt-3 rounded border border-slate-300 bg-white p-3">
+                <InlineCopyButton
+                  text={interviewBullets.map((bullet) => `• ${bullet}`).join('\n')}
+                  ariaLabel="Copy interview bullets"
+                />
                 <ul className="list-disc space-y-1 pl-5 text-sm text-slate-800">
                   {interviewBullets.map((bullet) => (
                     <li key={bullet}>{bullet}</li>
                   ))}
                 </ul>
-                <div className="mt-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCopyInterviewBullets}
-                  >
-                    {copiedInterviewBullets ? 'Copied' : 'Copy'}
-                  </Button>
-                </div>
               </div>
             )}
           </div>

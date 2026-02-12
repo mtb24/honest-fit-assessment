@@ -61,9 +61,10 @@ function ActiveProfileMeta() {
 
 function RootDocument({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const isFitRoute = pathname === '/'
-  const isProfileRoute = pathname === '/candidate-profile'
-  const showSettingsButton = isFitRoute || isProfileRoute
+  const isHomeRoute = pathname === '/'
+  const isCandidateRoute = pathname.startsWith('/candidate')
+  const isReviewerRoute = pathname.startsWith('/reviewer')
+  const showSettingsButton = isCandidateRoute || isReviewerRoute
   const toggleSettingsSidebar = () => {
     if (typeof window === 'undefined') return
     window.dispatchEvent(new CustomEvent('toggle-settings-sidebar'))
@@ -87,22 +88,32 @@ function RootDocument({ children }: { children: ReactNode }) {
                     to="/"
                     activeOptions={{ exact: true }}
                     className={`rounded-md px-2.5 py-1.5 text-sm transition ${
-                      isFitRoute
+                      isHomeRoute
                         ? 'bg-slate-900 text-white'
                         : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    Fit
+                    Home
                   </Link>
                   <Link
-                    to="/candidate-profile"
+                    to="/candidate/fit"
                     className={`rounded-md px-2.5 py-1.5 text-sm transition ${
-                      isProfileRoute
+                      isCandidateRoute
                         ? 'bg-slate-900 text-white'
                         : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    Profile
+                    Candidate
+                  </Link>
+                  <Link
+                    to="/reviewer"
+                    className={`rounded-md px-2.5 py-1.5 text-sm transition ${
+                      isReviewerRoute
+                        ? 'bg-slate-900 text-white'
+                        : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    Reviewer
                   </Link>
                 </nav>
               </div>

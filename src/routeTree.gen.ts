@@ -9,12 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as CandidateProfileRouteImport } from './routes/candidate-profile'
+import { Route as ReviewerRouteImport } from './routes/reviewer'
+import { Route as CandidateRouteImport } from './routes/candidate'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CandidateProfileRouteImport } from './routes/candidate/profile'
+import { Route as CandidateFitRouteImport } from './routes/candidate/fit'
 
-const CandidateProfileRoute = CandidateProfileRouteImport.update({
-  id: '/candidate-profile',
-  path: '/candidate-profile',
+const ReviewerRoute = ReviewerRouteImport.update({
+  id: '/reviewer',
+  path: '/reviewer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidateRoute = CandidateRouteImport.update({
+  id: '/candidate',
+  path: '/candidate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -22,40 +30,78 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CandidateProfileRoute = CandidateProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => CandidateRoute,
+} as any)
+const CandidateFitRoute = CandidateFitRouteImport.update({
+  id: '/fit',
+  path: '/fit',
+  getParentRoute: () => CandidateRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/candidate-profile': typeof CandidateProfileRoute
+  '/candidate': typeof CandidateRouteWithChildren
+  '/reviewer': typeof ReviewerRoute
+  '/candidate/fit': typeof CandidateFitRoute
+  '/candidate/profile': typeof CandidateProfileRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/candidate-profile': typeof CandidateProfileRoute
+  '/candidate': typeof CandidateRouteWithChildren
+  '/reviewer': typeof ReviewerRoute
+  '/candidate/fit': typeof CandidateFitRoute
+  '/candidate/profile': typeof CandidateProfileRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/candidate-profile': typeof CandidateProfileRoute
+  '/candidate': typeof CandidateRouteWithChildren
+  '/reviewer': typeof ReviewerRoute
+  '/candidate/fit': typeof CandidateFitRoute
+  '/candidate/profile': typeof CandidateProfileRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/candidate-profile'
+  fullPaths:
+    | '/'
+    | '/candidate'
+    | '/reviewer'
+    | '/candidate/fit'
+    | '/candidate/profile'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/candidate-profile'
-  id: '__root__' | '/' | '/candidate-profile'
+  to: '/' | '/candidate' | '/reviewer' | '/candidate/fit' | '/candidate/profile'
+  id:
+    | '__root__'
+    | '/'
+    | '/candidate'
+    | '/reviewer'
+    | '/candidate/fit'
+    | '/candidate/profile'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CandidateProfileRoute: typeof CandidateProfileRoute
+  CandidateRoute: typeof CandidateRouteWithChildren
+  ReviewerRoute: typeof ReviewerRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/candidate-profile': {
-      id: '/candidate-profile'
-      path: '/candidate-profile'
-      fullPath: '/candidate-profile'
-      preLoaderRoute: typeof CandidateProfileRouteImport
+    '/reviewer': {
+      id: '/reviewer'
+      path: '/reviewer'
+      fullPath: '/reviewer'
+      preLoaderRoute: typeof ReviewerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidate': {
+      id: '/candidate'
+      path: '/candidate'
+      fullPath: '/candidate'
+      preLoaderRoute: typeof CandidateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -65,12 +111,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/candidate/profile': {
+      id: '/candidate/profile'
+      path: '/profile'
+      fullPath: '/candidate/profile'
+      preLoaderRoute: typeof CandidateProfileRouteImport
+      parentRoute: typeof CandidateRoute
+    }
+    '/candidate/fit': {
+      id: '/candidate/fit'
+      path: '/fit'
+      fullPath: '/candidate/fit'
+      preLoaderRoute: typeof CandidateFitRouteImport
+      parentRoute: typeof CandidateRoute
+    }
   }
 }
 
+interface CandidateRouteChildren {
+  CandidateFitRoute: typeof CandidateFitRoute
+  CandidateProfileRoute: typeof CandidateProfileRoute
+}
+
+const CandidateRouteChildren: CandidateRouteChildren = {
+  CandidateFitRoute: CandidateFitRoute,
+  CandidateProfileRoute: CandidateProfileRoute,
+}
+
+const CandidateRouteWithChildren = CandidateRoute._addFileChildren(
+  CandidateRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CandidateProfileRoute: CandidateProfileRoute,
+  CandidateRoute: CandidateRouteWithChildren,
+  ReviewerRoute: ReviewerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

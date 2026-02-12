@@ -14,7 +14,7 @@ import { demoCandidateProfile } from '@/data/candidateProfile.demo'
 import { demoRecentRoles } from '@/data/demoRecentRoles'
 import { saveRecentRoles } from '@/lib/recentRoles'
 
-export const Route = createFileRoute('/candidate-profile')({
+export const Route = createFileRoute('/candidate/profile')({
   component: CandidateProfilePage,
 })
 
@@ -52,7 +52,7 @@ function CandidateProfilePage() {
           modelLoadError={modelLoadError}
           onReset={resetSettings}
         />
-        <div className="mx-auto max-w-4xl px-4 py-8">
+        <div className="max-w-4xl py-2">
           <div className="mb-4 flex items-center justify-end gap-2">
             <span className="text-xs text-slate-500">Safe local demo data</span>
             <button
@@ -83,11 +83,11 @@ function CandidateProfilePage() {
         modelLoadError={modelLoadError}
         onReset={resetSettings}
       />
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="max-w-4xl py-2">
         {showResumeBuildSuccess && (
           <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            Profile created from your resume. Review your headline and summary, then
-            run your first fit.
+            Profile created from your resume. Review your headline and summary, then run
+            your first fit.
           </div>
         )}
         <div className="mb-4 flex flex-wrap items-center justify-end gap-2">

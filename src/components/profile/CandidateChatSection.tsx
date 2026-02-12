@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 
 type CandidateChatSectionProps = {
   firstName: string
-  hasFreshRoleContext: boolean
+  contextNotice?: string | null
   suggestedQuestions: string[]
   messages: ChatMessage[]
   chatInput: string
@@ -17,7 +17,7 @@ type CandidateChatSectionProps = {
 
 export function CandidateChatSection({
   firstName,
-  hasFreshRoleContext,
+  contextNotice,
   suggestedQuestions,
   messages,
   chatInput,
@@ -29,9 +29,9 @@ export function CandidateChatSection({
   return (
     <Card className="ring-1 ring-slate-200">
       <h2 className="mb-4 text-lg font-semibold text-slate-900">Ask AI about {firstName}</h2>
-      {!hasFreshRoleContext && (
+      {contextNotice && (
         <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Re-run fit analysis to refresh role-aware chat context for this job description.
+          {contextNotice}
         </p>
       )}
       <div className="mb-3 flex flex-wrap gap-2">

@@ -9,6 +9,8 @@ type JobDescriptionFitSectionProps = {
   jobDescription: string
   onJobDescriptionChange: (value: string) => void
   onAssess: () => void
+  canAssess: boolean
+  cannotAssessMessage?: string
   assessPending: boolean
   assessError: string | null
   fitResult: FitResult | null
@@ -24,6 +26,8 @@ export function JobDescriptionFitSection({
   jobDescription,
   onJobDescriptionChange,
   onAssess,
+  canAssess,
+  cannotAssessMessage,
   assessPending,
   assessError,
   fitResult,
@@ -35,6 +39,9 @@ export function JobDescriptionFitSection({
   onCopyApplicationAnswer,
 }: JobDescriptionFitSectionProps) {
   const [copiedApplicationAnswer, setCopiedApplicationAnswer] = useState(false)
+  const hasValidJobDescription =
+    Boolean(jobDescription.trim()) && jobDescription.trim().length >= 40
+  const isAssessDisabled = !canAssess || !hasValidJobDescription || assessPending
 
   const handleCopyApplicationAnswer = async () => {
     await onCopyApplicationAnswer()
@@ -54,10 +61,14 @@ export function JobDescriptionFitSection({
       <Button
         className="mt-3"
         onClick={onAssess}
-        disabled={!jobDescription.trim() || jobDescription.trim().length < 40}
+        disabled={isAssessDisabled}
+        title={!canAssess ? cannotAssessMessage : undefined}
       >
         {assessPending ? 'Evaluating…' : 'Evaluate fit'}
       </Button>
+      {!canAssess && cannotAssessMessage && (
+        <p className="mt-2 text-xs text-slate-600">{cannotAssessMessage}</p>
+      )}
       {assessError && <p className="mt-2 text-sm text-red-800">{assessError}</p>}
       {fitResult && (
         <section className="mt-4 space-y-4 rounded-lg border border-slate-200 bg-white p-4">

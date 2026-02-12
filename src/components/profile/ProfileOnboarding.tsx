@@ -19,7 +19,11 @@ const parseResumeToProfile = parseResumeToProfileFn as unknown as (args: {
   }
 }) => Promise<CandidateProfile>
 
-export function ProfileOnboarding() {
+type ProfileOnboardingProps = {
+  onResumeProfileBuilt?: () => void
+}
+
+export function ProfileOnboarding({ onResumeProfileBuilt }: ProfileOnboardingProps) {
   const {
     setActiveProfile,
     loadExampleProfile,
@@ -61,6 +65,7 @@ export function ProfileOnboarding() {
         },
       })
       setActiveProfile(profile)
+      onResumeProfileBuilt?.()
     } catch (error) {
       console.error(error)
       setParseError(
@@ -88,6 +93,9 @@ export function ProfileOnboarding() {
         <label className="block text-xs font-medium text-slate-700">
           Paste your resume (text or markdown)
         </label>
+        <p className="text-xs text-slate-600">
+          Paste your full resume text here. PDF/Word upload coming later.
+        </p>
         <Textarea
           className="min-h-40 font-mono text-xs"
           value={resumeText}

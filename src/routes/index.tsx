@@ -190,6 +190,9 @@ function HomePage() {
     ? activeProfile.name.split(' ')[0] || activeProfile.name
     : 'candidate'
   const topHighlights = activeProfile ? getTopProfileHighlights(activeProfile) : []
+  const canAssessWithProfile = Boolean(activeProfile)
+  const missingProfileAssessHint =
+    'Create a profile first so the AI has something to compare this job to.'
 
   const handleAssess = () => {
     if (!activeProfile) return
@@ -237,34 +240,6 @@ function HomePage() {
     await navigator.clipboard.writeText(applicationParagraph)
   }
 
-  if (!hasProfile || !activeProfile) {
-    return (
-      <>
-        <LlmSettingsSidebar
-          llmSettings={llmSettings}
-          setLlmSettings={setLlmSettings}
-          availableModels={availableModels}
-          isLoadingModels={modelsQuery.isFetching}
-          modelLoadError={modelLoadError}
-          onReset={resetSettings}
-        />
-        <div className="mx-auto max-w-3xl px-4 py-12">
-          <Card className="ring-1 ring-slate-200">
-            <h1 className="text-xl font-semibold text-slate-900">Honest Fit Assessment</h1>
-            <p className="mt-2 text-sm text-slate-700">
-              To get an honest fit assessment, you first need a candidate profile.
-            </p>
-            <div className="mt-4">
-              <Link to="/candidate-profile" className={buttonVariants()}>
-                Set up my profile
-              </Link>
-            </div>
-          </Card>
-        </div>
-      </>
-    )
-  }
-
   return (
     <>
       <LlmSettingsSidebar
@@ -277,14 +252,41 @@ function HomePage() {
       />
       <div className="mx-auto max-w-5xl px-4 py-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <ProfileHeaderSection
-            name={activeProfile.name}
-            headline={activeProfile.headline}
-            subHeadline={activeProfile.subHeadline}
-          />
+          {activeProfile ? (
+            <ProfileHeaderSection
+              name={activeProfile.name}
+              headline={activeProfile.headline}
+              subHeadline={activeProfile.subHeadline}
+            />
+          ) : (
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900">Honest Fit Assessment</h1>
+              <p className="mt-1 text-sm text-slate-700">
+                Paste a job description now, then set up your profile to run fit analysis.
+              </p>
+            </div>
+          )}
           <ProfileActions onProfileImported={handleProfileImported} />
         </div>
 
+        {!hasProfile && (
+          <Card className="mb-6 border border-amber-200 bg-amber-50 ring-0">
+            <h2 className="text-base font-semibold text-amber-900">
+              Set up your profile to use Honest Fit
+            </h2>
+            <p className="mt-1 text-sm text-amber-900/90">
+              Before assessing jobs, create a candidate profile from your resume or
+              import one on the Profile page.
+            </p>
+            <div className="mt-3">
+              <Link to="/candidate-profile" className={buttonVariants()}>
+                Go to profile setup
+              </Link>
+            </div>
+          </Card>
+        )}
+
+        {activeProfile && (
           <Card className="mb-6 ring-1 ring-slate-200">
             <h2 className="text-lg font-semibold text-slate-900">Candidate Snapshot</h2>
             <p className="mt-1 text-sm text-slate-600">{activeProfile.location}</p>
@@ -301,6 +303,7 @@ function HomePage() {
               </div>
             )}
           </Card>
+        )}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr),minmax(240px,1fr)] md:items-start">
           <section>
@@ -308,6 +311,8 @@ function HomePage() {
               jobDescription={jobDescription}
               onJobDescriptionChange={setJobDescription}
               onAssess={handleAssess}
+              canAssess={canAssessWithProfile}
+              cannotAssessMessage={missingProfileAssessHint}
               assessPending={assessMutation.isPending}
               assessError={
                 assessMutation.isError
@@ -331,23 +336,32 @@ function HomePage() {
               onCopyApplicationAnswer={handleCopyApplicationAnswer}
             />
 
-            <CandidateChatSection
-              firstName={firstName}
-              hasFreshRoleContext={hasFreshRoleContext}
-              suggestedQuestions={SUGGESTED_QUESTIONS}
-              messages={messages}
-              chatInput={chatInput}
-              onChatInputChange={setChatInput}
-              onSendMessage={handleSendMessage}
-              chatPending={chatMutation.isPending}
-              chatError={
-                chatMutation.isError
-                  ? chatMutation.error instanceof Error
-                    ? chatMutation.error.message
-                    : 'Something went wrong.'
-                  : null
-              }
-            />
+            {activeProfile ? (
+              <CandidateChatSection
+                firstName={firstName}
+                hasFreshRoleContext={hasFreshRoleContext}
+                suggestedQuestions={SUGGESTED_QUESTIONS}
+                messages={messages}
+                chatInput={chatInput}
+                onChatInputChange={setChatInput}
+                onSendMessage={handleSendMessage}
+                chatPending={chatMutation.isPending}
+                chatError={
+                  chatMutation.isError
+                    ? chatMutation.error instanceof Error
+                      ? chatMutation.error.message
+                      : 'Something went wrong.'
+                    : null
+                }
+              />
+            ) : (
+              <Card className="ring-1 ring-slate-200">
+                <h2 className="text-lg font-semibold text-slate-900">Candidate Q&A</h2>
+                <p className="mt-2 text-sm text-slate-700">
+                  Create or import a profile first to unlock AI chat about the candidate.
+                </p>
+              </Card>
+            )}
           </section>
 
           <div className="space-y-4">

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 import { ProfileHeaderEditor } from '@/components/profile/ProfileHeaderEditor'
 import { ProfileActions } from '@/components/profile/ProfileActions'
 import { ResumeToProfileSection } from '@/components/profile/ResumeToProfileSection'
@@ -32,6 +33,7 @@ function CandidateProfilePage() {
     modelsQuery,
     resetSettings,
   } = useUiLlmSettings()
+  const [showResumeBuildSuccess, setShowResumeBuildSuccess] = useState(false)
 
   const handleLoadDemoProfile = () => {
     setActiveProfile(demoCandidateProfile)
@@ -61,7 +63,11 @@ function CandidateProfilePage() {
               Load demo profile &amp; roles
             </button>
           </div>
-          <ProfileOnboarding />
+          <ProfileOnboarding
+            onResumeProfileBuilt={() => {
+              setShowResumeBuildSuccess(true)
+            }}
+          />
         </div>
       </>
     )
@@ -78,6 +84,12 @@ function CandidateProfilePage() {
         onReset={resetSettings}
       />
       <div className="mx-auto max-w-4xl px-4 py-8">
+        {showResumeBuildSuccess && (
+          <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            Profile created from your resume. Review your headline and summary, then
+            run your first fit.
+          </div>
+        )}
         <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
           <span className="text-xs text-slate-500">Safe local demo data</span>
           <button

@@ -33,6 +33,7 @@ import { LlmSettingsSidebar } from '@/components/settings/LlmSettingsSidebar'
 import { useUiLlmSettings } from '@/lib/useUiLlmSettings'
 import { toRuntimeSettings } from '@/lib/llmRuntimeSettings'
 import { getTopProfileHighlights } from '@/lib/profileHighlights'
+import { useToast } from '@/context/ToastContext'
 
 export const Route = createFileRoute('/candidate/fit')({
   component: CandidateFitPage,
@@ -40,6 +41,7 @@ export const Route = createFileRoute('/candidate/fit')({
 
 function CandidateFitPage() {
   const { activeProfile, hasProfile } = useProfileContext()
+  const { showToast } = useToast()
   const [jobDescription, setJobDescription] = useState('')
   const [fitResult, setFitResult] = useState<FitResult | null>(null)
   const [recentRoles, setRecentRoles] = useState<RecentRole[]>([])
@@ -235,7 +237,12 @@ function CandidateFitPage() {
 
   const handleCopyApplicationAnswer = async () => {
     if (!applicationParagraph) return
-    await navigator.clipboard.writeText(applicationParagraph)
+    try {
+      await navigator.clipboard.writeText(applicationParagraph)
+      showToast('Copied to clipboard')
+    } catch {
+      showToast('Failed to copy')
+    }
   }
 
   const handleSaveApplicationSnippet = () => {
@@ -261,13 +268,23 @@ function CandidateFitPage() {
   }
 
   const handleCopySavedSnippet = async (snippetText: string) => {
-    await navigator.clipboard.writeText(snippetText)
+    try {
+      await navigator.clipboard.writeText(snippetText)
+      showToast('Copied to clipboard')
+    } catch {
+      showToast('Failed to copy')
+    }
   }
 
   const handleCopyInterviewBullets = async () => {
     if (interviewBullets.length === 0) return
     const payload = interviewBullets.map((bullet) => `• ${bullet}`).join('\n')
-    await navigator.clipboard.writeText(payload)
+    try {
+      await navigator.clipboard.writeText(payload)
+      showToast('Copied to clipboard')
+    } catch {
+      showToast('Failed to copy')
+    }
   }
 
   const handleDeleteSavedSnippet = (snippetId: string) => {

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { CandidateProfile, ChatMessage } from '@/data/types'
 import { chatAboutCandidateFn } from '@/server/chatAboutCandidate'
 import type { LlmRuntimeSettings } from '@/lib/llm/types'
+import type { ProfileSource } from '@/contexts/ProfileContext'
 import { useProfileContext } from '@/contexts/ProfileContext'
 import { LlmSettingsSidebar } from '@/components/settings/LlmSettingsSidebar'
 import { useUiLlmSettings } from '@/lib/useUiLlmSettings'
@@ -35,6 +36,7 @@ function ReviewerPage() {
   const {
     activeProfile,
     hasProfile,
+    profileSource,
     setActiveProfile,
     profileImportError,
     setProfileImportError,
@@ -77,14 +79,14 @@ function ReviewerPage() {
   const modelHintMissing = !llmSettings.provider || !llmSettings.model.trim()
 
   const handleLoadDemoCandidate = () => {
-    setActiveProfile(demoCandidateProfile)
+    setActiveProfile(demoCandidateProfile, 'demo')
     setProfileImportError(null)
     setMessages([])
     setChatInput('')
   }
 
   const handleProfileImported = (profile: CandidateProfile) => {
-    setActiveProfile(profile)
+    setActiveProfile(profile, 'importedJson')
     setProfileImportError(null)
     setMessages([])
     setChatInput('')
@@ -104,6 +106,7 @@ function ReviewerPage() {
     ? activeProfile.name.split(' ')[0] || activeProfile.name
     : 'candidate'
   const highlights = activeProfile ? getTopProfileHighlights(activeProfile, 5) : []
+  const profileSourceLabel = getProfileSourceLabel(profileSource)
 
   return (
     <>
@@ -126,6 +129,7 @@ function ReviewerPage() {
         ) : (
           <div className="space-y-4">
             <ReviewerProfileCard profile={activeProfile} />
+            <p className="text-xs text-slate-500">Profile source: {profileSourceLabel}</p>
             {highlights.length > 0 && (
               <Card className="ring-1 ring-slate-200">
                 <h2 className="text-base font-semibold text-slate-900">Profile highlights</h2>
@@ -166,4 +170,12 @@ function ReviewerPage() {
       </div>
     </>
   )
+}
+
+function getProfileSourceLabel(source: ProfileSource): string {
+  if (source === 'demo') return 'Demo profile'
+  if (source === 'importedJson') return 'Imported JSON'
+  if (source === 'resume') return 'Generated from resume (local)'
+  if (source === 'manual') return 'Local profile'
+  return 'Local profile (source unknown)'
 }

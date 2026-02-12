@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { FitResult } from '@/data/types'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/context/ToastContext'
 
 type FitSummaryProps = {
   fit: FitResult
@@ -8,6 +9,7 @@ type FitSummaryProps = {
 
 export function FitSummary({ fit }: FitSummaryProps) {
   const [copied, setCopied] = useState(false)
+  const { showToast } = useToast()
 
   const summary = useMemo(() => buildFitSummary(fit), [fit])
 
@@ -15,9 +17,11 @@ export function FitSummary({ fit }: FitSummaryProps) {
     try {
       await navigator.clipboard.writeText(summary)
       setCopied(true)
+      showToast('Copied to clipboard')
       window.setTimeout(() => setCopied(false), 1500)
     } catch (error) {
       console.error('Failed to copy summary', error)
+      showToast('Failed to copy')
     }
   }
 

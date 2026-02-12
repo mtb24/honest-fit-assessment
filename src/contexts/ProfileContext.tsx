@@ -12,10 +12,14 @@ import type { CandidateProfile } from '@/data/types'
 import { exportProfileToJson, parseExportedProfileJson } from '@/lib/profileSerialization'
 
 const PROFILE_STORAGE_KEY = 'honest-fit:active-profile'
+const PROFILE_SOURCE_STORAGE_KEY = 'honest-fit:profile-source'
+
+export type ProfileSource = 'demo' | 'importedJson' | 'resume' | 'manual' | 'unknown'
 
 type ProfileContextValue = {
   activeProfile: CandidateProfile | null
-  setActiveProfile: (profile: CandidateProfile | null) => void
+  profileSource: ProfileSource
+  setActiveProfile: (profile: CandidateProfile | null, source?: ProfileSource) => void
   profileImportError: string | null
   setProfileImportError: (message: string | null) => void
   hasProfile: boolean
@@ -26,33 +30,48 @@ type ProfileContextValue = {
 const ProfileContext = createContext<ProfileContextValue | null>(null)
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
+  const [initialState] = useState(loadInitialState)
   const [activeProfile, setActiveProfileState] = useState<CandidateProfile | null>(
-    loadInitialActiveProfile,
+    initialState.activeProfile,
   )
+  const [profileSource, setProfileSource] = useState<ProfileSource>(initialState.profileSource)
   const [profileImportError, setProfileImportError] = useState<string | null>(null)
 
-  const setActiveProfile = useCallback((profile: CandidateProfile | null) => {
-    setProfileImportError(null)
-    setActiveProfileState(profile)
-    if (typeof window === 'undefined') return
-    if (!profile) {
-      window.localStorage.removeItem(PROFILE_STORAGE_KEY)
-      return
-    }
-    window.localStorage.setItem(PROFILE_STORAGE_KEY, exportProfileToJson(profile))
-  }, [])
+  const setActiveProfile = useCallback(
+    (profile: CandidateProfile | null, source?: ProfileSource) => {
+      setProfileImportError(null)
+      setActiveProfileState(profile)
+
+      const nextSource: ProfileSource = profile
+        ? source ?? (activeProfile ? profileSource : 'manual')
+        : 'unknown'
+      setProfileSource(nextSource)
+
+      if (typeof window === 'undefined') return
+      if (!profile) {
+        window.localStorage.removeItem(PROFILE_STORAGE_KEY)
+        window.localStorage.removeItem(PROFILE_SOURCE_STORAGE_KEY)
+        return
+      }
+
+      window.localStorage.setItem(PROFILE_STORAGE_KEY, exportProfileToJson(profile))
+      window.localStorage.setItem(PROFILE_SOURCE_STORAGE_KEY, nextSource)
+    },
+    [activeProfile, profileSource],
+  )
 
   const clearProfile = useCallback(() => {
     setActiveProfile(null)
   }, [setActiveProfile])
 
   const loadExampleProfile = useCallback(() => {
-    setActiveProfile(exampleCandidateProfile)
+    setActiveProfile(exampleCandidateProfile, 'manual')
   }, [setActiveProfile])
 
   const value = useMemo<ProfileContextValue>(
     () => ({
       activeProfile,
+      profileSource,
       setActiveProfile,
       profileImportError,
       setProfileImportError,
@@ -64,6 +83,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       activeProfile,
       clearProfile,
       loadExampleProfile,
+      profileSource,
       profileImportError,
       setActiveProfile,
     ],
@@ -80,16 +100,49 @@ export function useProfileContext(): ProfileContextValue {
   return context
 }
 
-function loadInitialActiveProfile(): CandidateProfile | null {
-  if (typeof window === 'undefined') return initialCandidateProfile
+function loadInitialState(): {
+  activeProfile: CandidateProfile | null
+  profileSource: ProfileSource
+} {
+  if (typeof window === 'undefined') {
+    return {
+      activeProfile: initialCandidateProfile,
+      profileSource: initialCandidateProfile ? 'unknown' : 'unknown',
+    }
+  }
+
   const savedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY)
-  if (!savedProfile) return initialCandidateProfile
+  if (!savedProfile) {
+    return {
+      activeProfile: initialCandidateProfile,
+      profileSource: initialCandidateProfile ? 'unknown' : 'unknown',
+    }
+  }
 
   try {
-    return parseExportedProfileJson(savedProfile)
+    const profile = parseExportedProfileJson(savedProfile)
+    const rawSource = window.localStorage.getItem(PROFILE_SOURCE_STORAGE_KEY)
+    return {
+      activeProfile: profile,
+      profileSource: isProfileSource(rawSource) ? rawSource : 'unknown',
+    }
   } catch (error) {
     console.error('Failed to parse stored profile', error)
     window.localStorage.removeItem(PROFILE_STORAGE_KEY)
-    return initialCandidateProfile
+    window.localStorage.removeItem(PROFILE_SOURCE_STORAGE_KEY)
+    return {
+      activeProfile: initialCandidateProfile,
+      profileSource: initialCandidateProfile ? 'unknown' : 'unknown',
+    }
   }
+}
+
+function isProfileSource(value: string | null): value is ProfileSource {
+  return (
+    value === 'demo' ||
+    value === 'importedJson' ||
+    value === 'resume' ||
+    value === 'manual' ||
+    value === 'unknown'
+  )
 }

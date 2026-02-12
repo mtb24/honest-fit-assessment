@@ -18,7 +18,7 @@ export function ProfileActions({ onProfileImported }: ProfileActionsProps) {
   } = useProfileContext()
 
   const handleProfileImported = (profile: CandidateProfile) => {
-    setActiveProfile(profile)
+    setActiveProfile(profile, 'importedJson')
     onProfileImported?.(profile)
   }
 

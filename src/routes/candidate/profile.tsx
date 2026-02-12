@@ -36,7 +36,7 @@ function CandidateProfilePage() {
   const [showResumeBuildSuccess, setShowResumeBuildSuccess] = useState(false)
 
   const handleLoadDemoProfile = () => {
-    setActiveProfile(demoCandidateProfile)
+    setActiveProfile(demoCandidateProfile, 'demo')
     setProfileImportError(null)
     saveRecentRoles(demoRecentRoles)
   }
@@ -107,7 +107,7 @@ function CandidateProfilePage() {
         <ProfileCompleteness profile={activeProfile} />
 
         <ResumeToProfileSection
-          onProfileImported={setActiveProfile}
+          onProfileImported={(profile) => setActiveProfile(profile, 'resume')}
           onImportError={setProfileImportError}
         />
 

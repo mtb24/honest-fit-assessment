@@ -44,7 +44,7 @@ export function ProfileOnboarding({ onResumeProfileBuilt }: ProfileOnboardingPro
   const handleProfileImported = (profile: CandidateProfile) => {
     setProfileImportError(null)
     setParseError(null)
-    setActiveProfile(profile)
+    setActiveProfile(profile, 'importedJson')
   }
 
   const handleParseResume = async () => {
@@ -64,7 +64,7 @@ export function ProfileOnboarding({ onResumeProfileBuilt }: ProfileOnboardingPro
           llmSettings: readRuntimeSettingsFromStorage(),
         },
       })
-      setActiveProfile(profile)
+      setActiveProfile(profile, 'resume')
       onResumeProfileBuilt?.()
     } catch (error) {
       console.error(error)

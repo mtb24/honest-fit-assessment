@@ -1,42 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { FitResult } from '@/data/types'
-import { Button } from '@/components/ui/button'
-import { useToast } from '@/context/ToastContext'
+import { InlineCopyButton } from '@/components/common/InlineCopyButton'
 
 type FitSummaryProps = {
   fit: FitResult
 }
 
 export function FitSummary({ fit }: FitSummaryProps) {
-  const [copied, setCopied] = useState(false)
-  const { showToast } = useToast()
-
   const summary = useMemo(() => buildFitSummary(fit), [fit])
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(summary)
-      setCopied(true)
-      showToast('Copied to clipboard')
-      window.setTimeout(() => setCopied(false), 1500)
-    } catch (error) {
-      console.error('Failed to copy summary', error)
-      showToast('Failed to copy')
-    }
-  }
-
   return (
-    <div className="flex items-start justify-between gap-3 rounded border border-slate-200 bg-slate-50 p-3">
+    <div className="relative rounded border border-slate-200 bg-slate-50 p-3">
+      <InlineCopyButton text={summary} ariaLabel="Copy fit summary" />
       <p className="text-sm leading-relaxed text-slate-800">{summary}</p>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="whitespace-nowrap"
-        onClick={handleCopy}
-      >
-        {copied ? 'Copied' : 'Copy summary'}
-      </Button>
     </div>
   )
 }

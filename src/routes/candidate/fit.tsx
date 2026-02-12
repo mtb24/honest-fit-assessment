@@ -33,7 +33,7 @@ import { LlmSettingsSidebar } from '@/components/settings/LlmSettingsSidebar'
 import { useUiLlmSettings } from '@/lib/useUiLlmSettings'
 import { toRuntimeSettings } from '@/lib/llmRuntimeSettings'
 import { getTopProfileHighlights } from '@/lib/profileHighlights'
-import { useToast } from '@/context/ToastContext'
+import { InlineCopyButton } from '@/components/common/InlineCopyButton'
 
 export const Route = createFileRoute('/candidate/fit')({
   component: CandidateFitPage,
@@ -41,7 +41,6 @@ export const Route = createFileRoute('/candidate/fit')({
 
 function CandidateFitPage() {
   const { activeProfile, hasProfile } = useProfileContext()
-  const { showToast } = useToast()
   const [jobDescription, setJobDescription] = useState('')
   const [fitResult, setFitResult] = useState<FitResult | null>(null)
   const [recentRoles, setRecentRoles] = useState<RecentRole[]>([])
@@ -235,16 +234,6 @@ function CandidateFitPage() {
     setActiveRecentRoleId(null)
   }
 
-  const handleCopyApplicationAnswer = async () => {
-    if (!applicationParagraph) return
-    try {
-      await navigator.clipboard.writeText(applicationParagraph)
-      showToast('Copied to clipboard')
-    } catch {
-      showToast('Failed to copy')
-    }
-  }
-
   const handleSaveApplicationSnippet = () => {
     const currentBlurbText = applicationParagraph.trim()
     if (!currentBlurbText) return
@@ -265,26 +254,6 @@ function CandidateFitPage() {
     }
 
     setSavedSnippets((prev) => addSavedSnippet(prev, snippet))
-  }
-
-  const handleCopySavedSnippet = async (snippetText: string) => {
-    try {
-      await navigator.clipboard.writeText(snippetText)
-      showToast('Copied to clipboard')
-    } catch {
-      showToast('Failed to copy')
-    }
-  }
-
-  const handleCopyInterviewBullets = async () => {
-    if (interviewBullets.length === 0) return
-    const payload = interviewBullets.map((bullet) => `• ${bullet}`).join('\n')
-    try {
-      await navigator.clipboard.writeText(payload)
-      showToast('Copied to clipboard')
-    } catch {
-      showToast('Failed to copy')
-    }
   }
 
   const handleDeleteSavedSnippet = (snippetId: string) => {
@@ -384,7 +353,6 @@ function CandidateFitPage() {
                   : null
               }
               applicationParagraph={applicationParagraph}
-              onCopyApplicationAnswer={handleCopyApplicationAnswer}
               onSaveApplicationSnippet={handleSaveApplicationSnippet}
               onGenerateInterviewBullets={handleGenerateInterviewBullets}
               generateInterviewBulletsPending={interviewBulletsMutation.isPending}
@@ -396,7 +364,6 @@ function CandidateFitPage() {
                   : null
               }
               interviewBullets={interviewBullets}
-              onCopyInterviewBullets={handleCopyInterviewBullets}
             />
           </section>
 
@@ -423,8 +390,12 @@ function CandidateFitPage() {
                   {savedSnippets.map((snippet) => (
                     <div
                       key={snippet.id}
-                      className="rounded-md border border-slate-200 bg-white p-3"
+                      className="relative rounded-md border border-slate-200 bg-white p-3"
                     >
+                      <InlineCopyButton
+                        text={snippet.text}
+                        ariaLabel={`Copy snippet ${snippet.label}`}
+                      />
                       <p className="text-sm font-medium text-slate-900">{snippet.label}</p>
                       {snippet.roleLabel && (
                         <p className="mt-0.5 text-xs text-slate-500">{snippet.roleLabel}</p>
@@ -433,14 +404,6 @@ function CandidateFitPage() {
                         Saved {formatSavedDate(snippet.createdAt)}
                       </p>
                       <div className="mt-2 flex items-center gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleCopySavedSnippet(snippet.text)}
-                        >
-                          Copy
-                        </Button>
                         <Button
                           type="button"
                           size="sm"

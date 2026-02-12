@@ -1,5 +1,5 @@
 import { getDisplayLabelForRole, type RecentRole } from '@/lib/recentRoles'
-import { useToast } from '@/context/ToastContext'
+import { InlineCopyButton } from '@/components/common/InlineCopyButton'
 
 type RecentRoleDetailsProps = {
   role: RecentRole | null
@@ -42,7 +42,6 @@ export function RecentRoleDetails({
   demoMode = false,
   roleIndex,
 }: RecentRoleDetailsProps) {
-  const { showToast } = useToast()
   if (!role) {
     return (
       <section className="rounded-lg border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-600 ring-1 ring-slate-200">
@@ -73,17 +72,9 @@ export function RecentRoleDetails({
 
   const summaryText = summaryLines.join(' | ')
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(summaryText)
-      showToast('Copied to clipboard')
-    } catch {
-      showToast('Failed to copy')
-    }
-  }
-
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700 ring-1 ring-slate-200">
+    <section className="relative rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700 ring-1 ring-slate-200">
+      <InlineCopyButton text={summaryText} ariaLabel="Copy recent role summary" />
       <div className="mb-2 flex items-start justify-between gap-2">
         <div>
           <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-700">
@@ -132,16 +123,6 @@ export function RecentRoleDetails({
           </ul>
         </div>
       )}
-
-      <div className="mt-2 flex justify-end">
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="inline-flex items-center rounded-md border border-slate-300 px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100"
-        >
-          Copy summary
-        </button>
-      </div>
     </section>
   )
 }

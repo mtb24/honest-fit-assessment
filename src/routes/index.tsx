@@ -20,6 +20,14 @@ import { ProfileHeaderSection } from '@/components/profile/ProfileHeaderSection'
 import { ProfileActions } from '@/components/profile/ProfileActions'
 import { JobDescriptionFitSection } from '@/components/profile/JobDescriptionFitSection'
 import { CandidateChatSection } from '@/components/profile/CandidateChatSection'
+import { RecentRolesPanel } from '@/components/fit/RecentRolesPanel'
+import {
+  addRecentRole,
+  createRoleLabelFromJobDescription,
+  loadRecentRoles,
+  saveRecentRoles,
+  type RecentRole,
+} from '@/lib/recentRoles'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -54,6 +62,8 @@ function HomePage() {
   const [jobDescription, setJobDescription] = useState('')
   const [lastEvaluatedJobDescription, setLastEvaluatedJobDescription] = useState('')
   const [fitResult, setFitResult] = useState<FitResult | null>(null)
+  const [recentRoles, setRecentRoles] = useState<RecentRole[]>([])
+  const [activeRecentRoleId, setActiveRecentRoleId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -110,6 +120,16 @@ function HomePage() {
   }, [llmSettings])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    setRecentRoles(loadRecentRoles())
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    saveRecentRoles(recentRoles)
+  }, [recentRoles])
+
+  useEffect(() => {
     if (!settingsOpen) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -160,6 +180,23 @@ function HomePage() {
 
   const runtimeSettings = toRuntimeSettings(llmSettings)
 
+  const handleFitSuccess = (fit: FitResult, evaluatedJobDescription: string) => {
+    setFitResult(fit)
+    setLastEvaluatedJobDescription(evaluatedJobDescription.trim())
+    setApplicationParagraph('')
+
+    const label = createRoleLabelFromJobDescription(evaluatedJobDescription)
+    setRecentRoles((prev) => {
+      const next = addRecentRole(prev, {
+        label,
+        jobDescription: evaluatedJobDescription,
+        fit,
+      })
+      setActiveRecentRoleId(next[0]?.id ?? null)
+      return next
+    })
+  }
+
   const assessMutation = useMutation({
     mutationFn: (jd: string) => {
       if (!activeProfile) {
@@ -174,9 +211,7 @@ function HomePage() {
       })
     },
     onSuccess: (data, jd) => {
-      setFitResult(data)
-      setLastEvaluatedJobDescription(jd.trim())
-      setApplicationParagraph('')
+      handleFitSuccess(data, jd)
     },
   })
 
@@ -277,6 +312,20 @@ function HomePage() {
 
   const handleGenerateApplicationAnswer = () => {
     applicationBlurbMutation.mutate()
+  }
+
+  const handleSelectRecentRole = (role: RecentRole) => {
+    setJobDescription(role.jobDescription)
+    setFitResult(role.fit)
+    setLastEvaluatedJobDescription(role.jobDescription.trim())
+    setApplicationParagraph('')
+    setActiveRecentRoleId(role.id)
+    assessMutation.reset()
+  }
+
+  const handleClearRecentRoles = () => {
+    setRecentRoles([])
+    setActiveRecentRoleId(null)
   }
 
   const handleCopyApplicationAnswer = async () => {
@@ -485,7 +534,7 @@ function HomePage() {
   return (
     <>
       {settingsSidebar}
-      <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <ProfileHeaderSection
             name={activeProfile.name}
@@ -512,50 +561,63 @@ function HomePage() {
             )}
           </Card>
 
-          <JobDescriptionFitSection
-            jobDescription={jobDescription}
-            onJobDescriptionChange={setJobDescription}
-            onAssess={handleAssess}
-            assessPending={assessMutation.isPending}
-            assessError={
-              assessMutation.isError
-                ? assessMutation.error instanceof Error
-                  ? assessMutation.error.message
-                  : 'Something went wrong.'
-                : null
-            }
-            fitResult={fitResult}
-            showFitDebug={llmSettings.showFitDebug}
-            onGenerateApplicationAnswer={handleGenerateApplicationAnswer}
-            generateApplicationPending={applicationBlurbMutation.isPending}
-            generateApplicationError={
-              applicationBlurbMutation.isError
-                ? applicationBlurbMutation.error instanceof Error
-                  ? applicationBlurbMutation.error.message
-                  : 'Failed to generate application answer.'
-                : null
-            }
-            applicationParagraph={applicationParagraph}
-            onCopyApplicationAnswer={handleCopyApplicationAnswer}
-          />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr),minmax(240px,1fr)] md:items-start">
+          <section>
+            <JobDescriptionFitSection
+              jobDescription={jobDescription}
+              onJobDescriptionChange={setJobDescription}
+              onAssess={handleAssess}
+              assessPending={assessMutation.isPending}
+              assessError={
+                assessMutation.isError
+                  ? assessMutation.error instanceof Error
+                    ? assessMutation.error.message
+                    : 'Something went wrong.'
+                  : null
+              }
+              fitResult={fitResult}
+              showFitDebug={llmSettings.showFitDebug}
+              onGenerateApplicationAnswer={handleGenerateApplicationAnswer}
+              generateApplicationPending={applicationBlurbMutation.isPending}
+              generateApplicationError={
+                applicationBlurbMutation.isError
+                  ? applicationBlurbMutation.error instanceof Error
+                    ? applicationBlurbMutation.error.message
+                    : 'Failed to generate application answer.'
+                  : null
+              }
+              applicationParagraph={applicationParagraph}
+              onCopyApplicationAnswer={handleCopyApplicationAnswer}
+            />
 
-        <CandidateChatSection
-          firstName={firstName}
-          hasFreshRoleContext={hasFreshRoleContext}
-          suggestedQuestions={SUGGESTED_QUESTIONS}
-          messages={messages}
-          chatInput={chatInput}
-          onChatInputChange={setChatInput}
-          onSendMessage={handleSendMessage}
-          chatPending={chatMutation.isPending}
-          chatError={
-            chatMutation.isError
-              ? chatMutation.error instanceof Error
-                ? chatMutation.error.message
-                : 'Something went wrong.'
-              : null
-          }
-        />
+            <CandidateChatSection
+              firstName={firstName}
+              hasFreshRoleContext={hasFreshRoleContext}
+              suggestedQuestions={SUGGESTED_QUESTIONS}
+              messages={messages}
+              chatInput={chatInput}
+              onChatInputChange={setChatInput}
+              onSendMessage={handleSendMessage}
+              chatPending={chatMutation.isPending}
+              chatError={
+                chatMutation.isError
+                  ? chatMutation.error instanceof Error
+                    ? chatMutation.error.message
+                    : 'Something went wrong.'
+                  : null
+              }
+            />
+          </section>
+
+          <div className="space-y-4">
+            <RecentRolesPanel
+              roles={recentRoles}
+              activeRoleId={activeRecentRoleId}
+              onSelect={handleSelectRecentRole}
+              onClear={handleClearRecentRoles}
+            />
+          </div>
+        </div>
       </div>
     </>
   )

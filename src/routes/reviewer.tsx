@@ -1,19 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { CandidateProfile, ChatMessage } from '@/data/types'
 import { chatAboutCandidateFn } from '@/server/chatAboutCandidate'
 import type { LlmRuntimeSettings } from '@/lib/llm/types'
-import type { ProfileSource } from '@/contexts/ProfileContext'
 import { useProfileContext } from '@/contexts/ProfileContext'
 import { LlmSettingsSidebar } from '@/components/settings/LlmSettingsSidebar'
 import { useUiLlmSettings } from '@/lib/useUiLlmSettings'
 import { toRuntimeSettings } from '@/lib/llmRuntimeSettings'
 import { CandidateChatSection } from '@/components/profile/CandidateChatSection'
-import { ReviewerOnboardingCard } from '@/components/reviewer/ReviewerOnboardingCard'
 import { ReviewerProfileCard } from '@/components/reviewer/ReviewerProfileCard'
+import { ReviewerProfileControls } from '@/components/reviewer/ReviewerProfileControls'
 import { Card } from '@/components/ui/card'
-import { demoCandidateProfile } from '@/data/candidateProfile.demo'
 import { getTopProfileHighlights } from '@/lib/profileHighlights'
 
 export const Route = createFileRoute('/reviewer')({
@@ -36,10 +34,6 @@ function ReviewerPage() {
   const {
     activeProfile,
     hasProfile,
-    profileSource,
-    setActiveProfile,
-    profileImportError,
-    setProfileImportError,
   } = useProfileContext()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
@@ -76,21 +70,12 @@ function ReviewerPage() {
     onSuccess: (data) => setMessages(data.messages),
   })
 
+  useEffect(() => {
+    setMessages([])
+    setChatInput('')
+  }, [activeProfile])
+
   const modelHintMissing = !llmSettings.provider || !llmSettings.model.trim()
-
-  const handleLoadDemoCandidate = () => {
-    setActiveProfile(demoCandidateProfile, 'demo')
-    setProfileImportError(null)
-    setMessages([])
-    setChatInput('')
-  }
-
-  const handleProfileImported = (profile: CandidateProfile) => {
-    setActiveProfile(profile, 'importedJson')
-    setProfileImportError(null)
-    setMessages([])
-    setChatInput('')
-  }
 
   const handleSendMessage = (text: string) => {
     if (!activeProfile) return
@@ -106,7 +91,6 @@ function ReviewerPage() {
     ? activeProfile.name.split(' ')[0] || activeProfile.name
     : 'candidate'
   const highlights = activeProfile ? getTopProfileHighlights(activeProfile, 5) : []
-  const profileSourceLabel = getProfileSourceLabel(profileSource)
 
   return (
     <>
@@ -119,17 +103,11 @@ function ReviewerPage() {
         onReset={resetSettings}
       />
       <div className="mx-auto w-full max-w-5xl px-4 py-8">
-        {!hasProfile || !activeProfile ? (
-          <ReviewerOnboardingCard
-            profileImportError={profileImportError}
-            onImportError={setProfileImportError}
-            onProfileImported={handleProfileImported}
-            onLoadDemoCandidate={handleLoadDemoCandidate}
-          />
-        ) : (
+        <div className="space-y-4">
+          <ReviewerProfileControls />
+          {hasProfile && activeProfile && (
           <div className="space-y-4">
             <ReviewerProfileCard profile={activeProfile} />
-            <p className="text-xs text-slate-500">Profile source: {profileSourceLabel}</p>
             {highlights.length > 0 && (
               <Card className="ring-1 ring-slate-200">
                 <h2 className="text-base font-semibold text-slate-900">Profile highlights</h2>
@@ -166,16 +144,9 @@ function ReviewerPage() {
               />
             </div>
           </div>
-        )}
+          )}
+        </div>
       </div>
     </>
   )
-}
-
-function getProfileSourceLabel(source: ProfileSource): string {
-  if (source === 'demo') return 'Demo profile'
-  if (source === 'importedJson') return 'Imported JSON'
-  if (source === 'resume') return 'Generated from resume (local)'
-  if (source === 'manual') return 'Local profile'
-  return 'Local profile (source unknown)'
 }

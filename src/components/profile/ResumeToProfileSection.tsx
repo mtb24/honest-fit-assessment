@@ -106,9 +106,15 @@ export function ResumeToProfileSection({
       <h3 className="text-sm font-semibold text-slate-900">
         Generate a draft profile from a resume
       </h3>
+      <p className="mt-1 text-xs text-slate-600">
+        Paste a resume (yours or someone else&apos;s) and let AI convert it into a
+        structured profile draft. This won&apos;t automatically merge with your current
+        profile - you can review the draft and manually copy over anything useful before
+        applying it.
+      </p>
       <Textarea
         className="mt-3 min-h-40"
-        placeholder="Paste a resume and let AI convert it into a structured profile draft. This won&apos;t automatically merge with your current profile; you can review the draft and manually copy over anything useful before applying it."
+        placeholder="Paste raw resume text/markdown here..."
         value={resumeText}
         onChange={(event) => setResumeText(event.target.value)}
       />

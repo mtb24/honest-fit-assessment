@@ -1,0 +1,137 @@
+import type { RecentRole } from '@/lib/recentRoles'
+
+type RecentRoleDetailsProps = {
+  role: RecentRole | null
+}
+
+function getFitBadgeStyle(
+  fit: RecentRole['fit'] | undefined,
+): { label: string; className: string } {
+  if (fit?.fit === 'strong') {
+    return {
+      label: 'Strong fit',
+      className: 'bg-emerald-100 text-emerald-800',
+    }
+  }
+
+  if (fit?.fit === 'moderate') {
+    return {
+      label: 'Moderate fit',
+      className: 'bg-amber-100 text-amber-800',
+    }
+  }
+
+  if (fit?.fit === 'weak') {
+    return {
+      label: 'Weak fit',
+      className: 'bg-red-100 text-red-800',
+    }
+  }
+
+  return {
+    label: 'Fit unknown',
+    className: 'bg-slate-100 text-slate-700',
+  }
+}
+
+export function RecentRoleDetails({ role }: RecentRoleDetailsProps) {
+  if (!role) {
+    return (
+      <section className="rounded-lg border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-600 ring-1 ring-slate-200">
+        <h2 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-700">
+          Role details
+        </h2>
+        <p>Select a role from the list to see a quick fit summary.</p>
+      </section>
+    )
+  }
+
+  const fit = role.fit
+  const fitBadge = getFitBadgeStyle(fit)
+  const strengths = fit?.strengths ?? []
+  const gaps = fit?.gaps ?? []
+
+  const summaryLines: string[] = []
+  summaryLines.push(`${role.label}: ${fitBadge.label}`)
+
+  if (strengths.length) {
+    summaryLines.push(`Strengths: ${strengths.slice(0, 3).join('; ')}`)
+  }
+
+  if (gaps.length) {
+    summaryLines.push(`Gaps: ${gaps.slice(0, 2).join('; ')}`)
+  }
+
+  const summaryText = summaryLines.join(' | ')
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(summaryText)
+    } catch {
+      // Ignore clipboard failures so the panel stays non-blocking.
+    }
+  }
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700 ring-1 ring-slate-200">
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div>
+          <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-700">
+            Role details
+          </h2>
+          <p className="mt-1 text-[13px] font-medium text-slate-900">{role.label}</p>
+          <p className="text-[11px] text-slate-500">
+            {new Date(role.createdAt).toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
+          </p>
+        </div>
+        <span
+          className={`mt-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${fitBadge.className}`}
+        >
+          {fitBadge.label}
+        </span>
+      </div>
+
+      {strengths.length > 0 && (
+        <div className="mb-2">
+          <h3 className="mb-1 text-[11px] font-semibold text-emerald-700">Top strengths</h3>
+          <ul className="space-y-1">
+            {strengths.slice(0, 4).map((strength, index) => (
+              <li key={`${strength}-${index}`} className="flex gap-2">
+                <span className="mt-[2px] h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span className="text-[11px] text-slate-700">{strength}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {gaps.length > 0 && (
+        <div className="mb-2">
+          <h3 className="mb-1 text-[11px] font-semibold text-amber-700">Potential gaps</h3>
+          <ul className="space-y-1">
+            {gaps.slice(0, 3).map((gap, index) => (
+              <li key={`${gap}-${index}`} className="flex gap-2">
+                <span className="mt-[2px] h-1.5 w-1.5 rounded-full bg-amber-500" />
+                <span className="text-[11px] text-slate-700">{gap}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="mt-2 flex justify-end">
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="inline-flex items-center rounded-md border border-slate-300 px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100"
+        >
+          Copy summary
+        </button>
+      </div>
+    </section>
+  )
+}

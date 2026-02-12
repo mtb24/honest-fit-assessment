@@ -21,6 +21,7 @@ import { ProfileActions } from '@/components/profile/ProfileActions'
 import { JobDescriptionFitSection } from '@/components/profile/JobDescriptionFitSection'
 import { CandidateChatSection } from '@/components/profile/CandidateChatSection'
 import { RecentRolesPanel } from '@/components/fit/RecentRolesPanel'
+import { RecentRoleDetails } from '@/components/fit/RecentRoleDetails'
 import {
   addRecentRole,
   createRoleLabelFromJobDescription,
@@ -221,6 +222,8 @@ function HomePage() {
       currentJobDescription &&
       currentJobDescription === lastEvaluatedJobDescription,
   )
+  const activeRecentRole =
+    recentRoles.find((role) => role.id === activeRecentRoleId) ?? null
 
   const chatMutation = useMutation({
     mutationFn: (msgs: ChatMessage[]) => {
@@ -616,6 +619,7 @@ function HomePage() {
               onSelect={handleSelectRecentRole}
               onClear={handleClearRecentRoles}
             />
+            <RecentRoleDetails role={activeRecentRole} />
           </div>
         </div>
       </div>

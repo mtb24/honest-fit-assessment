@@ -9,6 +9,9 @@ import { ProfileCompleteness } from '@/components/profile/ProfileCompleteness'
 import { useProfileContext } from '@/contexts/ProfileContext'
 import { LlmSettingsSidebar } from '@/components/settings/LlmSettingsSidebar'
 import { useUiLlmSettings } from '@/lib/useUiLlmSettings'
+import { demoCandidateProfile } from '@/data/candidateProfile.demo'
+import { demoRecentRoles } from '@/data/demoRecentRoles'
+import { saveRecentRoles } from '@/lib/recentRoles'
 
 export const Route = createFileRoute('/candidate-profile')({
   component: CandidateProfilePage,
@@ -30,6 +33,12 @@ function CandidateProfilePage() {
     resetSettings,
   } = useUiLlmSettings()
 
+  const handleLoadDemoProfile = () => {
+    setActiveProfile(demoCandidateProfile)
+    setProfileImportError(null)
+    saveRecentRoles(demoRecentRoles)
+  }
+
   if (!hasProfile || !activeProfile) {
     return (
       <>
@@ -42,6 +51,16 @@ function CandidateProfilePage() {
           onReset={resetSettings}
         />
         <div className="mx-auto max-w-4xl px-4 py-8">
+          <div className="mb-4 flex items-center justify-end gap-2">
+            <span className="text-xs text-slate-500">Safe local demo data</span>
+            <button
+              type="button"
+              onClick={handleLoadDemoProfile}
+              className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-surface px-3 text-sm font-medium text-text transition-colors hover:bg-slate-100"
+            >
+              Load demo profile &amp; roles
+            </button>
+          </div>
           <ProfileOnboarding />
         </div>
       </>
@@ -59,7 +78,15 @@ function CandidateProfilePage() {
         onReset={resetSettings}
       />
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-4 flex justify-end">
+        <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+          <span className="text-xs text-slate-500">Safe local demo data</span>
+          <button
+            type="button"
+            onClick={handleLoadDemoProfile}
+            className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-surface px-3 text-sm font-medium text-text transition-colors hover:bg-slate-100"
+          >
+            Load demo profile &amp; roles
+          </button>
           <ProfileActions />
         </div>
 

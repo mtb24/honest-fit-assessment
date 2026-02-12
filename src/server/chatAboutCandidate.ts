@@ -41,11 +41,16 @@ Role context:
 ${roleContext}
 `
 
-  const llmResponseText = await callLlmText({
-    system: systemPrompt,
-    user: lastUserMessage.content,
-    settings: llmSettings,
-  })
+  let llmResponseText: string
+  try {
+    llmResponseText = await callLlmText({
+      system: systemPrompt,
+      user: lastUserMessage.content,
+      settings: llmSettings,
+    })
+  } catch (error) {
+    throw mapLlmErrorToFriendlyMessage(error)
+  }
 
   const assistantMessage: ChatMessage = {
     role: 'assistant',
@@ -75,3 +80,37 @@ export const chatAboutCandidateFn = createServerFn({ method: 'POST' })
       data.llmSettings,
     ),
   )
+
+function mapLlmErrorToFriendlyMessage(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error ?? '')
+  const normalized = message.toLowerCase()
+
+  if (
+    normalized.includes('all llm providers failed') ||
+    normalized.includes('fetch failed') ||
+    normalized.includes('network') ||
+    normalized.includes('http') ||
+    normalized.includes('timeout') ||
+    normalized.includes('econn') ||
+    normalized.includes('enotfound')
+  ) {
+    return new Error(
+      'The AI provider is not available. Please check your settings or try again later.',
+    )
+  }
+
+  if (
+    normalized.includes('did not return a valid') ||
+    normalized.includes('valid json') ||
+    normalized.includes('json parse') ||
+    normalized.includes('unexpected token')
+  ) {
+    return new Error(
+      'The AI response was not in the expected format. Try again, or simplify the job description.',
+    )
+  }
+
+  return error instanceof Error
+    ? error
+    : new Error('Something went wrong while contacting the AI provider.')
+}

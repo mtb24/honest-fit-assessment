@@ -76,11 +76,16 @@ Fit assessment result (JSON):
 ${JSON.stringify(params.fit, null, 2)}
   `.trim()
 
-  const paragraph = await callLlmText({
-    system: systemPrompt,
-    user: userPrompt,
-    settings: params.llmSettings,
-  })
+  let paragraph: string
+  try {
+    paragraph = await callLlmText({
+      system: systemPrompt,
+      user: userPrompt,
+      settings: params.llmSettings,
+    })
+  } catch (error) {
+    throw mapLlmErrorToFriendlyMessage(error)
+  }
 
   return { paragraph: paragraph.replace(/\s+/g, ' ').trim() }
 }
@@ -88,3 +93,37 @@ ${JSON.stringify(params.fit, null, 2)}
 export const generateApplicationBlurbFn = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => applicationBlurbInputSchema.parse(data))
   .handler(async ({ data }) => generateApplicationBlurbOnServer(data))
+
+function mapLlmErrorToFriendlyMessage(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error ?? '')
+  const normalized = message.toLowerCase()
+
+  if (
+    normalized.includes('all llm providers failed') ||
+    normalized.includes('fetch failed') ||
+    normalized.includes('network') ||
+    normalized.includes('http') ||
+    normalized.includes('timeout') ||
+    normalized.includes('econn') ||
+    normalized.includes('enotfound')
+  ) {
+    return new Error(
+      'The AI provider is not available. Please check your settings or try again later.',
+    )
+  }
+
+  if (
+    normalized.includes('did not return a valid') ||
+    normalized.includes('valid json') ||
+    normalized.includes('json parse') ||
+    normalized.includes('unexpected token')
+  ) {
+    return new Error(
+      'The AI response was not in the expected format. Try again, or simplify the job description.',
+    )
+  }
+
+  return error instanceof Error
+    ? error
+    : new Error('Something went wrong while contacting the AI provider.')
+}

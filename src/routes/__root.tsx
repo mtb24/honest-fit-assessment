@@ -63,6 +63,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isFitRoute = pathname === '/'
   const isProfileRoute = pathname === '/candidate-profile'
+  const showSettingsButton = isFitRoute || isProfileRoute
   const toggleSettingsSidebar = () => {
     if (typeof window === 'undefined') return
     window.dispatchEvent(new CustomEvent('toggle-settings-sidebar'))
@@ -107,7 +108,7 @@ function RootDocument({ children }: { children: ReactNode }) {
               </div>
               <div className="flex items-center gap-3">
                 <ActiveProfileMeta />
-                {isFitRoute && (
+                {showSettingsButton && (
                   <button
                     type="button"
                     className="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm shadow-sm transition hover:bg-slate-100"

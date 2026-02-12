@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import type { KnownProvider } from '@/lib/llm/types'
-import type { UiLlmSettings } from '@/lib/useUiLlmSettings'
+import { LLM_SETTINGS_UPDATED_EVENT, type UiLlmSettings } from '@/lib/useUiLlmSettings'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -24,6 +24,19 @@ export function LlmSettingsSidebar({
 }: LlmSettingsSidebarProps) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const sidebarRef = useRef<HTMLElement | null>(null)
+  const updateSettings = (updater: (prev: UiLlmSettings) => UiLlmSettings) => {
+    setLlmSettings((prev) => {
+      const next = updater(prev)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent(LLM_SETTINGS_UPDATED_EVENT, {
+            detail: next,
+          }),
+        )
+      }
+      return next
+    })
+  }
 
   useEffect(() => {
     const onToggle = () => setSettingsOpen((prev) => !prev)
@@ -120,7 +133,7 @@ export function LlmSettingsSidebar({
                 className="h-9 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary/30"
                 value={llmSettings.provider}
                 onChange={(e) =>
-                  setLlmSettings((prev) => ({
+                  updateSettings((prev) => ({
                     ...prev,
                     provider: e.target.value as KnownProvider,
                   }))
@@ -139,7 +152,7 @@ export function LlmSettingsSidebar({
                 className="h-9 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-60"
                 value={llmSettings.model}
                 onChange={(e) =>
-                  setLlmSettings((prev) => ({
+                  updateSettings((prev) => ({
                     ...prev,
                     model: e.target.value,
                   }))
@@ -167,7 +180,7 @@ export function LlmSettingsSidebar({
                 placeholder="Or enter model id manually"
                 value={llmSettings.model}
                 onChange={(e) =>
-                  setLlmSettings((prev) => ({
+                  updateSettings((prev) => ({
                     ...prev,
                     model: e.target.value,
                   }))
@@ -184,7 +197,7 @@ export function LlmSettingsSidebar({
                 step="0.1"
                 value={llmSettings.temperature}
                 onChange={(e) =>
-                  setLlmSettings((prev) => ({
+                  updateSettings((prev) => ({
                     ...prev,
                     temperature: e.target.value,
                   }))
@@ -199,7 +212,7 @@ export function LlmSettingsSidebar({
                 placeholder="mock,openai"
                 value={llmSettings.fallbackProvidersCsv}
                 onChange={(e) =>
-                  setLlmSettings((prev) => ({
+                  updateSettings((prev) => ({
                     ...prev,
                     fallbackProvidersCsv: e.target.value,
                   }))
@@ -213,7 +226,7 @@ export function LlmSettingsSidebar({
                 className="h-4 w-4 rounded border-border text-primary focus:ring-primary/30"
                 checked={llmSettings.showFitDebug}
                 onChange={(e) =>
-                  setLlmSettings((prev) => ({
+                  updateSettings((prev) => ({
                     ...prev,
                     showFitDebug: e.target.checked,
                   }))
@@ -228,7 +241,7 @@ export function LlmSettingsSidebar({
                 className="h-4 w-4 rounded border-border text-primary focus:ring-primary/30"
                 checked={llmSettings.demoMode}
                 onChange={(e) =>
-                  setLlmSettings((prev) => ({
+                  updateSettings((prev) => ({
                     ...prev,
                     demoMode: e.target.checked,
                   }))

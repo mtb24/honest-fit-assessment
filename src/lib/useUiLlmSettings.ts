@@ -4,6 +4,7 @@ import { getLlmModelsFn } from '@/server/llmModels'
 import type { KnownProvider } from '@/lib/llm/types'
 
 export const SETTINGS_STORAGE_KEY = 'honest-fit:llm-settings'
+export const LLM_SETTINGS_UPDATED_EVENT = 'honest-fit:llm-settings-updated'
 
 export type UiLlmSettings = {
   provider: KnownProvider
@@ -70,6 +71,11 @@ export function useUiLlmSettings() {
     if (!hasHydratedSettings) return
     if (typeof window === 'undefined') return
     window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(llmSettings))
+    window.dispatchEvent(
+      new CustomEvent(LLM_SETTINGS_UPDATED_EVENT, {
+        detail: llmSettings,
+      }),
+    )
   }, [hasHydratedSettings, llmSettings])
 
   useEffect(() => {
@@ -83,6 +89,11 @@ export function useUiLlmSettings() {
     setLlmSettings(DEFAULT_UI_SETTINGS)
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(SETTINGS_STORAGE_KEY)
+      window.dispatchEvent(
+        new CustomEvent(LLM_SETTINGS_UPDATED_EVENT, {
+          detail: DEFAULT_UI_SETTINGS,
+        }),
+      )
     }
   }
 

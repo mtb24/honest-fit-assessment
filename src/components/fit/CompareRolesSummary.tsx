@@ -1,7 +1,8 @@
-import type { RecentRole } from '@/lib/recentRoles'
+import { getDisplayLabelForRole, type RecentRole } from '@/lib/recentRoles'
 
 type CompareRolesSummaryProps = {
   roles: RecentRole[]
+  demoMode?: boolean
 }
 
 type RoleFitLevel = 'strong' | 'moderate' | 'weak' | 'unknown'
@@ -14,7 +15,10 @@ function getFitLevel(role: RecentRole): RoleFitLevel {
   return 'unknown'
 }
 
-export function CompareRolesSummary({ roles }: CompareRolesSummaryProps) {
+export function CompareRolesSummary({
+  roles,
+  demoMode = false,
+}: CompareRolesSummaryProps) {
   if (!roles.length) {
     return null
   }
@@ -37,6 +41,9 @@ export function CompareRolesSummary({ roles }: CompareRolesSummaryProps) {
     roles.find((role) => getFitLevel(role) === 'moderate') ??
     roles.find((role) => getFitLevel(role) === 'weak') ??
     null
+  const bestMatchIndex = bestMatch
+    ? roles.findIndex((role) => role.id === bestMatch.id)
+    : -1
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700 ring-1 ring-slate-200">
@@ -79,7 +86,12 @@ export function CompareRolesSummary({ roles }: CompareRolesSummaryProps) {
       {bestMatch && (
         <p className="mt-1 text-[11px] text-slate-600">
           <span className="font-semibold text-slate-900">Best match:</span>{' '}
-          <span className="text-slate-900">{bestMatch.label}</span>
+          <span className="text-slate-900">
+            {getDisplayLabelForRole(bestMatch, {
+              demoMode,
+              index: bestMatchIndex >= 0 ? bestMatchIndex : undefined,
+            })}
+          </span>
         </p>
       )}
     </section>

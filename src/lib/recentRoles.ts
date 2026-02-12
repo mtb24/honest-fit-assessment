@@ -61,3 +61,24 @@ export function createRoleLabelFromJobDescription(jobDescription: string): strin
   if (firstLine.length > 80) return `${firstLine.slice(0, 77)}...`
   return firstLine
 }
+
+export function getDisplayLabelForRole(
+  role: RecentRole,
+  options?: { demoMode?: boolean; index?: number },
+): string {
+  const demoMode = options?.demoMode ?? false
+  if (!demoMode) return role.label
+
+  const idx = (options?.index ?? 0) + 1
+  const fitLevel = role.fit?.fit
+  const fitLabel =
+    fitLevel === 'strong'
+      ? 'Strong fit'
+      : fitLevel === 'moderate'
+        ? 'Moderate fit'
+        : fitLevel === 'weak'
+          ? 'Weak fit'
+          : 'Fit unknown'
+
+  return `Role #${idx} (${fitLabel})`
+}

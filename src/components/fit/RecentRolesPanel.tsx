@@ -1,8 +1,9 @@
-import type { RecentRole } from '@/lib/recentRoles'
+import { getDisplayLabelForRole, type RecentRole } from '@/lib/recentRoles'
 
 type RecentRolesPanelProps = {
   roles: RecentRole[]
   activeRoleId?: string | null
+  demoMode?: boolean
   onSelect: (role: RecentRole) => void
   onClear?: () => void
 }
@@ -10,6 +11,7 @@ type RecentRolesPanelProps = {
 export function RecentRolesPanel({
   roles,
   activeRoleId,
+  demoMode = false,
   onSelect,
   onClear,
 }: RecentRolesPanelProps) {
@@ -45,7 +47,8 @@ export function RecentRolesPanel({
         )}
       </div>
       <ul className="space-y-1.5">
-        {roles.map((role) => {
+        {roles.map((role, index) => {
+          const displayLabel = getDisplayLabelForRole(role, { demoMode, index })
           const fitLabel =
             role.fit.fit === 'strong'
               ? 'Strong fit'
@@ -73,7 +76,7 @@ export function RecentRolesPanel({
               >
                 <div className="flex-1">
                   <div className="truncate text-[13px] font-medium text-slate-900">
-                    {role.label}
+                    {displayLabel}
                   </div>
                   <div className="text-[11px] text-slate-500">
                     {new Date(role.createdAt).toLocaleDateString(undefined, {

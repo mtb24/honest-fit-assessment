@@ -1,7 +1,9 @@
-import type { RecentRole } from '@/lib/recentRoles'
+import { getDisplayLabelForRole, type RecentRole } from '@/lib/recentRoles'
 
 type RecentRoleDetailsProps = {
   role: RecentRole | null
+  demoMode?: boolean
+  roleIndex?: number
 }
 
 function getFitBadgeStyle(
@@ -34,7 +36,11 @@ function getFitBadgeStyle(
   }
 }
 
-export function RecentRoleDetails({ role }: RecentRoleDetailsProps) {
+export function RecentRoleDetails({
+  role,
+  demoMode = false,
+  roleIndex,
+}: RecentRoleDetailsProps) {
   if (!role) {
     return (
       <section className="rounded-lg border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-600 ring-1 ring-slate-200">
@@ -47,12 +53,13 @@ export function RecentRoleDetails({ role }: RecentRoleDetailsProps) {
   }
 
   const fit = role.fit
+  const displayLabel = getDisplayLabelForRole(role, { demoMode, index: roleIndex })
   const fitBadge = getFitBadgeStyle(fit)
   const strengths = fit?.strengths ?? []
   const gaps = fit?.gaps ?? []
 
   const summaryLines: string[] = []
-  summaryLines.push(`${role.label}: ${fitBadge.label}`)
+  summaryLines.push(`${displayLabel}: ${fitBadge.label}`)
 
   if (strengths.length) {
     summaryLines.push(`Strengths: ${strengths.slice(0, 3).join('; ')}`)
@@ -79,7 +86,7 @@ export function RecentRoleDetails({ role }: RecentRoleDetailsProps) {
           <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-700">
             Role details
           </h2>
-          <p className="mt-1 text-[13px] font-medium text-slate-900">{role.label}</p>
+          <p className="mt-1 text-[13px] font-medium text-slate-900">{displayLabel}</p>
           <p className="text-[11px] text-slate-500">
             {new Date(role.createdAt).toLocaleDateString(undefined, {
               month: 'short',

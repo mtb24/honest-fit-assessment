@@ -2,6 +2,7 @@ import type { CandidateProfile } from '@/data/types'
 import { useProfileContext } from '@/contexts/ProfileContext'
 import { ExportProfileButton } from '@/components/profile/ExportProfileButton'
 import { ImportProfileButton } from '@/components/profile/ImportProfileButton'
+import { demoCandidateProfile } from '@/data/candidateProfile.demo'
 
 type ProfileActionsProps = {
   onProfileImported?: (profile: CandidateProfile) => void
@@ -25,6 +26,16 @@ export function ProfileActions({ onProfileImported }: ProfileActionsProps) {
   return (
     <div className="flex shrink-0 flex-col items-start gap-2">
       <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-surface px-3 text-sm font-medium text-text transition-colors hover:bg-slate-100"
+          onClick={() => {
+            setActiveProfile(demoCandidateProfile, 'demo')
+            setProfileImportError(null)
+          }}
+        >
+          Load demo profile
+        </button>
         {activeProfile && <ExportProfileButton profile={activeProfile} />}
         <ImportProfileButton
           onProfileImported={handleProfileImported}

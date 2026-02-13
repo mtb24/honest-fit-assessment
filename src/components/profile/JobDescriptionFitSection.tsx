@@ -1,6 +1,5 @@
 import type { FitResult } from '@/data/types'
 import { FitSummary } from '@/components/fit/FitSummary'
-import { InlineCopyButton } from '@/components/common/InlineCopyButton'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -15,15 +14,6 @@ type JobDescriptionFitSectionProps = {
   assessError: string | null
   fitResult: FitResult | null
   showFitDebug: boolean
-  onGenerateApplicationAnswer: () => void
-  generateApplicationPending: boolean
-  generateApplicationError: string | null
-  applicationParagraph: string
-  onSaveApplicationSnippet: () => void
-  onGenerateInterviewBullets: () => void
-  generateInterviewBulletsPending: boolean
-  generateInterviewBulletsError: string | null
-  interviewBullets: string[]
 }
 
 export function JobDescriptionFitSection({
@@ -36,15 +26,6 @@ export function JobDescriptionFitSection({
   assessError,
   fitResult,
   showFitDebug,
-  onGenerateApplicationAnswer,
-  generateApplicationPending,
-  generateApplicationError,
-  applicationParagraph,
-  onSaveApplicationSnippet,
-  onGenerateInterviewBullets,
-  generateInterviewBulletsPending,
-  generateInterviewBulletsError,
-  interviewBullets,
 }: JobDescriptionFitSectionProps) {
   const hasValidJobDescription =
     Boolean(jobDescription.trim()) && jobDescription.trim().length >= 40
@@ -100,82 +81,6 @@ export function JobDescriptionFitSection({
           </p>
 
           <FitSummary fit={fitResult} />
-
-          <div className="rounded border border-slate-200 bg-slate-50 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-medium text-slate-800">
-                Application helper
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={onGenerateApplicationAnswer}
-                disabled={generateApplicationPending}
-              >
-                {generateApplicationPending
-                  ? 'Generating...'
-                  : 'Generate application answer'}
-              </Button>
-            </div>
-            {generateApplicationError && (
-              <p className="mt-2 text-xs text-red-700">{generateApplicationError}</p>
-            )}
-            {applicationParagraph && (
-              <div className="relative mt-3 rounded border border-slate-300 bg-white p-3">
-                <InlineCopyButton
-                  text={applicationParagraph}
-                  ariaLabel="Copy application answer"
-                />
-                <p className="text-sm leading-relaxed text-slate-800">
-                  {applicationParagraph}
-                </p>
-                <div className="mt-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={onSaveApplicationSnippet}
-                  >
-                    Save snippet
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="rounded border border-slate-200 bg-slate-50 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-medium text-slate-800">Interview bullets</p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={onGenerateInterviewBullets}
-                disabled={generateInterviewBulletsPending}
-              >
-                {generateInterviewBulletsPending
-                  ? 'Generating...'
-                  : 'Generate interview bullets'}
-              </Button>
-            </div>
-            {generateInterviewBulletsError && (
-              <p className="mt-2 text-xs text-red-700">{generateInterviewBulletsError}</p>
-            )}
-            {interviewBullets.length > 0 && (
-              <div className="relative mt-3 rounded border border-slate-300 bg-white p-3">
-                <InlineCopyButton
-                  text={interviewBullets.map((bullet) => `• ${bullet}`).join('\n')}
-                  ariaLabel="Copy interview bullets"
-                />
-                <ul className="list-disc space-y-1 pl-5 text-sm text-slate-800">
-                  {interviewBullets.map((bullet) => (
-                    <li key={bullet}>{bullet}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
 
           <dl className="text-slate-800">
             <dt className="mt-3 text-sm font-semibold text-slate-700">Summary</dt>

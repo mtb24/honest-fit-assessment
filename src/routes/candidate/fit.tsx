@@ -9,12 +9,12 @@ import type { LlmRuntimeSettings } from '@/lib/llm/types'
 import { useProfileContext } from '@/contexts/ProfileContext'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ProfileHeaderSection } from '@/components/profile/ProfileHeaderSection'
 import { ProfileActions } from '@/components/profile/ProfileActions'
 import { JobDescriptionFitSection } from '@/components/profile/JobDescriptionFitSection'
 import { RecentRolesPanel } from '@/components/fit/RecentRolesPanel'
 import { CompareRolesSummary } from '@/components/fit/CompareRolesSummary'
 import { RecentRoleDetails } from '@/components/fit/RecentRoleDetails'
+import { FitCandidateHeader } from '@/components/fit/FitCandidateHeader'
 import {
   addRecentRole,
   createRoleLabelFromJobDescription,
@@ -32,7 +32,6 @@ import {
 import { LlmSettingsSidebar } from '@/components/settings/LlmSettingsSidebar'
 import { useUiLlmSettings } from '@/lib/useUiLlmSettings'
 import { toRuntimeSettings } from '@/lib/llmRuntimeSettings'
-import { getTopProfileHighlights } from '@/lib/profileHighlights'
 import { InlineCopyButton } from '@/components/common/InlineCopyButton'
 
 export const Route = createFileRoute('/candidate/fit')({
@@ -197,7 +196,6 @@ function CandidateFitPage() {
     },
   })
 
-  const topHighlights = activeProfile ? getTopProfileHighlights(activeProfile) : []
   const canAssessWithProfile = Boolean(activeProfile)
   const missingProfileAssessHint =
     'Create a profile first so the AI has something to compare this job to.'
@@ -272,20 +270,12 @@ function CandidateFitPage() {
       />
       <div>
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          {activeProfile ? (
-            <ProfileHeaderSection
-              name={activeProfile.name}
-              headline={activeProfile.headline}
-              subHeadline={activeProfile.subHeadline}
-            />
-          ) : (
-            <div>
-              <h1 className="text-xl font-semibold text-slate-900">Honest Fit Assessment</h1>
-              <p className="mt-1 text-sm text-slate-700">
-                Paste a job description now, then set up your profile to run fit analysis.
-              </p>
-            </div>
-          )}
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">Honest Fit Assessment</h1>
+            <p className="mt-1 text-sm text-slate-700">
+              Paste a job description now, then set up your profile to run fit analysis.
+            </p>
+          </div>
           <ProfileActions onProfileImported={handleProfileImported} />
         </div>
 
@@ -306,68 +296,30 @@ function CandidateFitPage() {
           </Card>
         )}
 
-        {activeProfile && (
-          <Card className="mb-6 ring-1 ring-slate-200">
-            <h2 className="text-lg font-semibold text-slate-900">Candidate Snapshot</h2>
-            <p className="mt-1 text-sm text-slate-600">{activeProfile.location}</p>
-            <p className="mt-2 text-sm text-slate-700">{activeProfile.summary}</p>
+        <div className="space-y-4">
+          <FitCandidateHeader />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <div className="space-y-6">
+              <JobDescriptionFitSection
+                jobDescription={jobDescription}
+                onJobDescriptionChange={setJobDescription}
+                onAssess={handleAssess}
+                canAssess={canAssessWithProfile}
+                cannotAssessMessage={missingProfileAssessHint}
+                assessPending={assessMutation.isPending}
+                assessError={
+                  assessMutation.isError
+                    ? assessMutation.error instanceof Error
+                      ? assessMutation.error.message
+                      : 'Something went wrong.'
+                    : null
+                }
+                fitResult={fitResult}
+                showFitDebug={llmSettings.showFitDebug}
+              />
+            </div>
 
-            {topHighlights.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-sm font-semibold text-slate-800">Top 3 highlights</h3>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                  {topHighlights.map((highlight) => (
-                    <li key={highlight}>{highlight}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </Card>
-        )}
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr),minmax(240px,1fr)] md:items-start">
-          <section>
-            <JobDescriptionFitSection
-              jobDescription={jobDescription}
-              onJobDescriptionChange={setJobDescription}
-              onAssess={handleAssess}
-              canAssess={canAssessWithProfile}
-              cannotAssessMessage={missingProfileAssessHint}
-              assessPending={assessMutation.isPending}
-              assessError={
-                assessMutation.isError
-                  ? assessMutation.error instanceof Error
-                    ? assessMutation.error.message
-                    : 'Something went wrong.'
-                  : null
-              }
-              fitResult={fitResult}
-              showFitDebug={llmSettings.showFitDebug}
-              onGenerateApplicationAnswer={handleGenerateApplicationAnswer}
-              generateApplicationPending={applicationBlurbMutation.isPending}
-              generateApplicationError={
-                applicationBlurbMutation.isError
-                  ? applicationBlurbMutation.error instanceof Error
-                    ? applicationBlurbMutation.error.message
-                    : 'Failed to generate application answer.'
-                  : null
-              }
-              applicationParagraph={applicationParagraph}
-              onSaveApplicationSnippet={handleSaveApplicationSnippet}
-              onGenerateInterviewBullets={handleGenerateInterviewBullets}
-              generateInterviewBulletsPending={interviewBulletsMutation.isPending}
-              generateInterviewBulletsError={
-                interviewBulletsMutation.isError
-                  ? interviewBulletsMutation.error instanceof Error
-                    ? interviewBulletsMutation.error.message
-                    : 'Failed to generate interview bullets.'
-                  : null
-              }
-              interviewBullets={interviewBullets}
-            />
-          </section>
-
-          <div className="space-y-4">
+            <aside className="space-y-4">
             <RecentRolesPanel
               roles={recentRoles}
               activeRoleId={activeRecentRoleId}
@@ -381,6 +333,94 @@ function CandidateFitPage() {
               demoMode={llmSettings.demoMode}
               roleIndex={activeRecentRoleIndex >= 0 ? activeRecentRoleIndex : undefined}
             />
+            <Card className="ring-1 ring-slate-200">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-base font-semibold text-slate-900">Application helper</h2>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleGenerateApplicationAnswer}
+                  disabled={!fitResult || applicationBlurbMutation.isPending}
+                >
+                  {applicationBlurbMutation.isPending
+                    ? 'Generating...'
+                    : 'Generate application answer'}
+                </Button>
+              </div>
+              {!fitResult && (
+                <p className="mt-2 text-xs text-slate-600">
+                  Run a fit assessment before generating an application answer.
+                </p>
+              )}
+              {applicationBlurbMutation.isError && (
+                <p className="mt-2 text-xs text-red-700">
+                  {applicationBlurbMutation.error instanceof Error
+                    ? applicationBlurbMutation.error.message
+                    : 'Failed to generate application answer.'}
+                </p>
+              )}
+              {applicationParagraph && (
+                <div className="relative mt-3 rounded border border-slate-300 bg-white p-3">
+                  <InlineCopyButton
+                    text={applicationParagraph}
+                    ariaLabel="Copy application answer"
+                  />
+                  <p className="text-sm leading-relaxed text-slate-800">{applicationParagraph}</p>
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSaveApplicationSnippet}
+                    >
+                      Save snippet
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card>
+            <Card className="ring-1 ring-slate-200">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-base font-semibold text-slate-900">Interview bullets</h2>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleGenerateInterviewBullets}
+                  disabled={!fitResult || interviewBulletsMutation.isPending}
+                >
+                  {interviewBulletsMutation.isPending
+                    ? 'Generating...'
+                    : 'Generate interview bullets'}
+                </Button>
+              </div>
+              {!fitResult && (
+                <p className="mt-2 text-xs text-slate-600">
+                  Run a fit assessment before generating interview bullets.
+                </p>
+              )}
+              {interviewBulletsMutation.isError && (
+                <p className="mt-2 text-xs text-red-700">
+                  {interviewBulletsMutation.error instanceof Error
+                    ? interviewBulletsMutation.error.message
+                    : 'Failed to generate interview bullets.'}
+                </p>
+              )}
+              {interviewBullets.length > 0 && (
+                <div className="relative mt-3 rounded border border-slate-300 bg-white p-3">
+                  <InlineCopyButton
+                    text={interviewBullets.map((bullet) => `• ${bullet}`).join('\n')}
+                    ariaLabel="Copy interview bullets"
+                  />
+                  <ul className="list-disc space-y-1 pl-5 text-sm text-slate-800">
+                    {interviewBullets.map((bullet) => (
+                      <li key={bullet}>{bullet}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Card>
             <Card className="ring-1 ring-slate-200">
               <h2 className="text-lg font-semibold text-slate-900">Saved snippets</h2>
               {savedSnippets.length === 0 ? (
@@ -418,6 +458,7 @@ function CandidateFitPage() {
                 </div>
               )}
             </Card>
+            </aside>
           </div>
         </div>
       </div>

@@ -104,7 +104,7 @@ function ReviewerPage() {
       />
       <div className="mx-auto w-full max-w-5xl px-4 py-8">
         <div className="space-y-4">
-          <ReviewerProfileControls />
+          <ReviewerProfileControls llmSettings={runtimeSettings} />
           {hasProfile && activeProfile && (
           <div className="space-y-4">
             <ReviewerProfileCard profile={activeProfile} />

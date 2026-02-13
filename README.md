@@ -12,8 +12,8 @@ Paste a candidate profile, paste a JD, and the app will:
 
 It has two main modes:
 
-- **Candidate** – build/import a profile, run “Honest Fit” checks, keep a recent roles list, and generate interview/application copy.
-- **Reviewer** – load a candidate profile and ask AI questions like a hiring manager  
+- **Candidate** – build/import a profile, run “Honest Fit” checks in a two-column fit dashboard, keep a recent roles list, and generate interview/application copy.
+- **Reviewer** – load a candidate profile (demo/import/resume builder) and ask AI questions like a hiring manager  
   (e.g. “Where might this person need onboarding support?”).
 
 Under the hood it’s a **TanStack Start** app that uses LLMs behind a clean UI. Profiles are stored locally and can be imported/exported as JSON, so you can use it as a personal “fit lab” or demo it live in interviews without exposing private data.
@@ -30,12 +30,15 @@ Under the hood it’s a **TanStack Start** app that uses LLMs behind a clean UI.
 - 📄 **Job Description Fit**
   - Paste any JD and run a structured fit assessment
   - Strengths / gaps mapped directly to the JD requirements
+  - Compact “Evaluating fit for <name>” header with quick profile edit link
+  - Two-column layout: JD + fit on the left, role tools/helpers/snippets on the right
   - Recent roles panel with cached results and comparison strip
   - Interview bullets + application blurb generator
   - Saved snippets for quick reuse
 
 - 🧑‍⚖️ **Reviewer mode**
   - Load demo or imported profiles without touching candidate workflows
+  - Expandable “Build profile from resume” flow that only appears when toggled
   - Profile highlights card (top 3–5 things to know)
   - “Ask AI about <candidate>” chat with suggested questions
   - Answers formatted for readable, recruiter-friendly output
@@ -121,7 +124,7 @@ Candidate
 	•	Save useful AI snippets for reuse
 
 Reviewer
-	•	Load demo or import profile JSON (independent of candidate flow)
+	•	Load demo, import profile JSON, or expand resume builder when needed
 	•	See profile highlights and source (resume/import/demo/manual)
 	•	Use “Ask AI about <candidate>” for targeted Q&A
 	•	Copy answers/snippets for use in notes or feedback

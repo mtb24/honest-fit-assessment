@@ -10,7 +10,7 @@ function HomePage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <Card className="ring-1 ring-slate-200">
-        <h1 className="text-2xl font-semibold text-slate-900">Honest Fit Assistant</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Honest Fit Assessment</h1>
         <p className="mt-2 text-sm text-slate-700">
           Evaluate candidate-role fit with AI, manage profile data, and support reviewer Q&A
           in one shared workflow.

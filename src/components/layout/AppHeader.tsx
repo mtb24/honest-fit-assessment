@@ -24,7 +24,7 @@ export function AppHeader() {
         <div className="flex flex-col items-start gap-2">
           <h1 className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
             <Link to="/" className="rounded-sm hover:text-slate-700 focus:outline-none">
-              Honest Fit Assistant
+              Honest Fit Assessment
             </Link>
           </h1>
           <nav className="flex items-center gap-2" aria-label="Primary">

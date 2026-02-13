@@ -1,4 +1,4 @@
-# Honest Fit Assistant Roadmap
+# Honest Fit Assessment Roadmap
 
 ## Current Status
 

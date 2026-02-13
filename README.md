@@ -1,6 +1,6 @@
-# Honest Fit Assistant
+# Honest Fit Assessment
 
-Honest Fit Assistant is an AI-powered tool for stress-testing how well a candidate actually fits a job description.
+Honest Fit Assessment is an AI-powered tool for stress-testing how well a candidate actually fits a job description.
 
 Paste a candidate profile, paste a JD, and the app will:
 

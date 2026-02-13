@@ -1,4 +1,4 @@
-# Honest Fit Assistant V2.0 TODO
+# Honest Fit Assessment V2.0 TODO
 
 For near-term non-V2 milestones (provider reliability, UX polish, QA), see `ROADMAP.md`.
 

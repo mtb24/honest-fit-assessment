@@ -22,7 +22,7 @@ export const Route = createRootRouteWithContext<{
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Honest Fit Assistant' },
+      { title: 'Honest Fit Assessment' },
     ],
     links: [{ rel: 'stylesheet', href: appCss }],
   }),

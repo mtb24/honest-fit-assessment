@@ -4,6 +4,7 @@ import type {
   FitResult,
   RequirementMatch,
 } from '@/data/types'
+import { enforceLiteralEvidenceForRequirement } from '@/lib/fitPostProcessing'
 import { callLlmJson } from '@/lib/llm/client'
 import type { LlmRuntimeSettings } from '@/lib/llm/types'
 import { z } from 'zod'
@@ -110,52 +111,50 @@ export async function analyzeRequirementsWithLLM(params: {
       : '- No additional derived facts available; rely on the profile JSON.'
 
   const systemPrompt = `
-You are helping evaluate how well a candidate matches a job description.
-You are given a set of FACTS about the candidate derived from profile data.
+You are an assistant that evaluates how well a candidate fits a specific job description.
 
-Your ONLY task in this step is to:
-- Extract the most important requirements/responsibilities from the job description.
-- For each requirement, classify whether the candidate profile shows:
-  - "match" (clear or strong implied evidence),
-  - "partial" (some related/adjacent evidence), or
-  - "none" (no meaningful evidence).
-- Mark whether each requirement is "core" or "nice".
-- Provide a short "evidence" string when evidence exists, grounded explicitly in the profile.
+Your job is to:
+- Extract the key requirements from the job description.
+- Compare them against the candidate profile.
+- Output a structured analysis of:
+  - Which requirements are matched vs. partial vs. gaps
+  - Honest, recruiter-friendly reasoning.
 
-IMPORTANT INTERPRETATION RULES:
+CRITICAL RULES (DO NOT VIOLATE):
+- Only mark a requirement as "match" when there is clear, explicit evidence in the candidate profile.
+- For technology-specific requirements, you MUST see those technologies by name in the profile. Do NOT infer:
+  - Node.js or PHP does NOT imply Java Spring Boot.
+  - React does NOT imply Angular.
+  - "Back-end experience" does NOT imply any specific language or framework unless it is explicitly listed.
+- For credentials and constraints, you MUST see them explicitly mentioned to count as matched:
+  - If the job requires Top Secret Clearance (or similar) and the profile does not mention it, this is a gap.
+  - The same applies for required degrees, specific certifications, or citizenship requirements.
+- If the candidate has related but different experience, treat this as a gap and explain the closest relevant experience in your reasoning.
+- Never claim the candidate has experience with a technology, clearance, or domain if the profile does not explicitly support it.
 
-- Treat the provided FACTS section as ground truth.
-- You MUST NOT claim "no evidence" for any capability that appears in the FACTS list.
-- For adjacent requirements (for example B2B SaaS vs marketing sites, or design systems vs broader frontend ownership), describe transferability as "partial" when not identical, rather than "none".
+FIT LEVEL GUIDANCE:
+- Strong fit: Candidate clearly matches the majority of core requirements, including key stack/tooling/role expectations. Only minor or trainable gaps.
+- Moderate fit: Candidate matches some important requirements but is missing several others, or their experience is adjacent and would require ramp-up.
+- Weak fit: Candidate is missing many fundamental requirements, or is in a very different discipline.
 
-- You MUST use semantic reasoning, not exact string matching.
-  - If the profile shows multi-year React/TypeScript SPA work, that counts as expert-level React/TypeScript unless the job requires something very different.
-  - If the profile shows SSR / Next.js experience, that supports requirements mentioning Next.js or SEO-aware rendering.
-  - If the profile mentions B2B SaaS, ecommerce, or public-facing SPAs, that counts as at least a partial match for "high-traffic SaaS or startup websites".
-  - If the profile includes bullets like "Collaborated with product and backend engineers" or soft skills like "Cross-functional collaboration", that is evidence for collaboration with cross-functional teams.
-  - If the profile lists "Team leadership and mentoring" or similar, that is evidence for mentoring and setting standards.
-
-- When in doubt between "partial" and "none", choose "partial".
-  Reserve "none" only when you truly have no reasonable evidence from the profile.
-
-- Focus CORE requirements on capabilities and experience that are central to doing the job:
-  examples: owning a marketing site, React/TypeScript/Next.js proficiency, web performance/accessibility, collaborating with design/marketing, mentoring.
-  Soft requirements like "has a portfolio", "is highly opinionated", or "strong communicator" should usually be "nice" unless the job explicitly frames them as must-haves.
-
-- Limit the number of "core" requirements to at most 6. Everything else should be marked "nice".
-
-You must NOT invent gaps that contradict the profile.
-For example, if the profile clearly shows React/TypeScript and multiple years of frontend SPA work, you MUST NOT say they lack React or TypeScript experience.
+OUTPUT STYLE:
+- Be concise, honest, and recruiter-friendly.
+- Prefer short sections and bullet points over long paragraphs.
+- Avoid exaggeration; it is OK to say the candidate is not a good fit if that is the case.
+- When you mention a match, briefly anchor it to something concrete from the profile (title, project, stack, etc.).
+- When you mention a gap, say whether the gap is:
+  - Hard constraint (for example missing Top Secret Clearance)
+  - Stack-specific but adjacent skills exist (for example Node.js vs Java)
+  - Domain/scale mismatch (for example no evidence of 10k+ user scale)
 
 Return ONLY a JSON array of objects with shape:
-
 [
   {
     "id": "short-stable-id",
     "text": "requirement text in your own words",
     "importance": "core" | "nice",
     "evidenceLevel": "match" | "partial" | "none",
-    "evidence": "short explanation or quote from the profile, or empty string"
+    "evidence": "short explanation grounded in the profile, or empty string"
   }
 ]
 `.trim()
@@ -173,7 +172,7 @@ ${jobDescription}
 Steps:
 1) Identify 5-10 key requirements.
 2) Mark at most 6 as "core", the rest as "nice".
-3) For each, classify evidenceLevel using the rules above, erring towards "partial" when anything related appears in the profile.
+3) For each, classify evidenceLevel using the literal-evidence rules above.
 4) Return the JSON array with NO extra commentary.
 `.trim()
 
@@ -185,8 +184,18 @@ Steps:
     errorMessage: 'LLM did not return valid requirements JSON',
   })
 
-  console.log('Requirement matches:', requirements)
-  return requirements
+  const profilePlainText = JSON.stringify(profile).toLowerCase()
+  const correctedRequirements = requirements.map((requirement) => ({
+    ...requirement,
+    evidenceLevel: enforceLiteralEvidenceForRequirement(
+      requirement.text,
+      profilePlainText,
+      requirement.evidenceLevel,
+    ),
+  }))
+
+  console.log('Requirement matches:', correctedRequirements)
+  return correctedRequirements
 }
 
 export async function assessFitWithLLM(params: {
